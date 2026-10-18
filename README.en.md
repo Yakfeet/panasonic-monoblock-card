@@ -28,6 +28,8 @@ Do you also have an Atlantic Explorer heat pump water heater? There is a separat
 3. Paste the URL of this repository, choose type **Dashboard** and click **Add**.
 4. Search for **Panasonic Monoblock Card**, click **Download** and reload the browser (Ctrl+F5).
 
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Yakfeet&repository=panasonic-monoblock-card&category=plugin)
+
 ### Manual
 
 1. Download `dist/panasonic-monoblock-card.js` and place it in `/config/www/`.
