@@ -194,6 +194,8 @@ class PanasonicMonoblockCard extends WPBase {
     /* garage als losse blok: bij een liggend scherm staat dat onder de waarden, bij een losse detailkaart eronder */
     const garOpt = c.show_garage;
     const garShown = garOpt === true || garOpt === 'true' || (garOpt !== false && garOpt !== 'false' && (this._has('garage_supply') || this._has('garage_return')));
+    /* golfjes boven de vloerverwarming: x = begin van de lus, y = hoogte van de bovenste baan */
+    const hz = (xL, y0, col) => [8, 33, 58].map((dx, i) => `<path class="haze" style="animation-delay:${[0.3, 0.9, 1.5][i]}s" d="M${xL + dx} ${y0 - 4} q4 -4.5 0 -9 t0 -9" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`).join('');
     const garPanel = () => {
       if (!garShown) return '';
       const S = isNum(this._n('garage_supply')) ? this._n('garage_supply') : sup, R = isNum(this._n('garage_return')) ? this._n('garage_return') : ret;
@@ -202,6 +204,7 @@ class PanasonicMonoblockCard extends WPBase {
         ${this._pipe('M318 8 V40', cs, circ, 6, fd)}
         ${this._pipe(loopPath(54, 300, 228), ca, circ, 6, fd)}
         ${this._pipe('M318 116 V140', cr, circ, 6, fd)}
+        ${circ ? hz(228, 54, ca) : ''}
         ${loopBox(300, 40, [54, 68, 82, 96])}
         ${tag2(0, 66, 'Vloerverwarming garage', 'garage')}
       </svg>`;
@@ -370,6 +373,7 @@ class PanasonicMonoblockCard extends WPBase {
       ${showB ? `
         ${this._pipe(bathCoil, cB.a, bathOn, 6, fd)}
         ${this._pipe(retBathDrop, cB.r, bathOn, 6, fd)}
+        ${bathOn ? hz(512, 84, cB.a) : ''}
         ${loopBox(584, 70, [84, 98, 112, 126])}
         ${tag2(500, 172, 'Badkamer vloer', 'bath')}` : ''}
 
@@ -389,6 +393,7 @@ class PanasonicMonoblockCard extends WPBase {
       ${showG ? `
         ${this._pipe(garOut, cG.a, garOn, 6, fd)}
         ${this._pipe(garRet, cG.r, garOn, 6, fd)}
+        ${garOn ? hz(512, gy + 26, cG.a) : ''}
         ${loopBox(584, gy + 14, [gy + 26, gy + 40, gy + 54, gy + 68])}
         ${tag2(336, gy + 40, 'Vloerverwarming garage', 'garage')}` : ''}
 
