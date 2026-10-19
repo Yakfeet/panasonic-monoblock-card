@@ -57,6 +57,17 @@ entities:
   setpoint: sensor.panasonic_target
   softstart: binary_sensor.wp_softstart_in_uitvoering
   thermostat: climate.woonkamer
+  # temperatures per circuit (all optional)
+  rad_supply: sensor.radiators_supply
+  rad_return: sensor.radiators_return
+  bath_supply: sensor.bathroom_floor_supply
+  bath_return: sensor.bathroom_floor_return
+  floor_supply: sensor.floor_heating_supply
+  floor_return: sensor.floor_heating_return
+  garage_supply: sensor.garage_supply
+  garage_return: sensor.garage_return
+  rad_ground_supply: sensor.radiator_downstairs_supply
+  rad_ground_return: sensor.radiator_downstairs_return
 ```
 
 ### Options
@@ -65,14 +76,19 @@ entities:
 | --- | --- | --- |
 | `title` | Card title | `Warmtepomp` |
 | `show_radiators` | Show the radiator circuit | `true` |
-| `show_floor` | Show underfloor heating | `true` |
+| `show_floor` | Show underfloor heating, ground floor | `true` |
+| `show_bathroom` | Show the bathroom floor (first floor). `auto` shows it as soon as you fill in `bath_supply` or `bath_return` | `auto` |
+| `show_radiators_ground` | Show the radiator on the ground floor. `auto` shows it as soon as you fill in `rad_ground_supply` or `rad_ground_return` | `auto` |
+| `show_garage` | Show the garage underfloor heating. `auto` shows it as soon as you fill in `garage_supply` or `garage_return` | `auto` |
+| `view` | `full`, `drawing` or `details`, see below | `full` |
+| `layout` | `auto`, `horizontal` or `vertical`, see below | `auto` |
 | `reverse_flow` | Reverses all flow animations | `false` |
 
 ### Entities
 
 | Key | Meaning |
 | --- | --- |
-| `supply` / `return` | Supply and return water temperature (outlet / inlet) |
+| `supply` / `return` | Supply and return water temperature of the heat pump itself (outlet / inlet). Shown next to the outdoor unit |
 | `delta` | ΔT, only needed if you have no supply and return |
 | `flow` | Water flow rate (L/min) |
 | `power` | Electrical power (W) |
@@ -88,13 +104,58 @@ entities:
 | `mode` / `work_mode` | Operating mode and work mode |
 | `setpoint` | Target supply temperature |
 | `thermostat` | `climate` entity, shows the room temperature |
+| `rad_supply` / `rad_return` | Supply and return of the radiators (bedrooms, first floor) |
+| `rad_ground_supply` / `rad_ground_return` | Supply and return of the radiator on the ground floor |
+| `bath_supply` / `bath_return` | Supply and return of the bathroom underfloor heating (first floor) |
+| `floor_supply` / `floor_return` | Supply and return of the ground floor underfloor heating manifold |
+| `garage_supply` / `garage_return` | Supply and return of the garage underfloor heating manifold |
 | `floor_pump` / `radiator_pump` | Pump switch. If it is off, that circuit turns grey |
 | `energy_today` | Energy used today (kWh) |
+
+## Landscape screens and separate cards
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-horizontal-dark.gif">
+    <img src="images/monoblock-horizontal-light.gif" alt="Landscape on a wide screen" width="760">
+  </picture>
+</p>
+
+On a wide or landscape screen the drawing automatically sits on the left, with the status and values next to it, as soon as the card is about 920 pixels wide. You can also choose this yourself, or split the card in two:
+
+| Option | Values | Default | What it does |
+| --- | --- | --- | --- |
+| `layout` | `auto`, `horizontal`, `vertical` | `auto` | Drawing next to or above the details |
+| `view` | `full`, `drawing`, `details` | `full` | Everything, only the drawing, or only the details |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-details-dark.png">
+    <img src="images/monoblock-details-light.png" alt="Details only" width="620">
+  </picture>
+</p>
+
+For two separate cards side by side, use the same configuration twice:
+
+```yaml
+type: horizontal-stack
+cards:
+  - type: custom:panasonic-monoblock-card
+    view: drawing
+    entities: { ... }
+  - type: custom:panasonic-monoblock-details-card
+    entities: { ... }
+```
+
+`panasonic-monoblock-details-card` is simply a card with `view: details`. The details card also shows the values that are otherwise in the drawing (supply, return, ΔT, outdoor air, compressor, fan and flow) as tiles. The per-circuit temperatures are only in the drawing, except those of the garage.
+
+**The garage moves along.** In a landscape layout (so also with `layout: auto` on a wide screen) the garage appears as a separate block on the right, under the values. With `view: drawing` the garage is not in the drawing but in the details card (`view: details`), so in a split setup it appears only once. If you only need the drawing, set `show_garage: false`.
 
 ---
 
 ## Good to know
 
+- **Multiple circuits:** the heat pump's own supply and return are shown next to the outdoor unit. Every circuit in the house shows its own supply and return, and its pipes take their colour from those temperatures. A circuit without its own sensors uses the heat pump's temperatures. The heat pump's circulation pump is drawn inside the outdoor unit (bottom right, at the return). Circuits without a pump (such as underfloor heating that hangs straight on the heat pump circulation) do not need a pump sensor: leave out `floor_pump` and it flows as soon as the heat pump circulates.
 - **Flow direction:** the supply runs from the heat pump to the radiators and the underfloor heating, and the return runs back to the heat pump. If a direction looks reversed on your setup, set `reverse_flow: true`.
 - The COP is an estimate unless you provide `cop` or `heat_power`: flow × 4.186 × ΔT divided by electrical power.
 - An entity that does not exist is silently skipped. If a value stays empty, check that the entity ID is correct.

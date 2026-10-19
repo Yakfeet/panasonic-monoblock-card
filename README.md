@@ -57,6 +57,17 @@ entities:
   setpoint: sensor.panasonic_target
   softstart: binary_sensor.wp_softstart_in_uitvoering
   thermostat: climate.woonkamer
+  # temperaturen per circuit (allemaal optioneel)
+  rad_supply: sensor.radiatoren_aanvoer
+  rad_return: sensor.radiatoren_retour
+  bath_supply: sensor.badkamer_vloer_aanvoer
+  bath_return: sensor.badkamer_vloer_retour
+  floor_supply: sensor.vloerverwarming_aanvoer
+  floor_return: sensor.vloerverwarming_retour
+  garage_supply: sensor.garage_aanvoer
+  garage_return: sensor.garage_retour
+  rad_ground_supply: sensor.radiator_beneden_aanvoer
+  rad_ground_return: sensor.radiator_beneden_retour
 ```
 
 ### Opties
@@ -65,14 +76,19 @@ entities:
 | --- | --- | --- |
 | `title` | Titel van de kaart | `Warmtepomp` |
 | `show_radiators` | Radiatorcircuit tonen | `true` |
-| `show_floor` | Vloerverwarming tonen | `true` |
+| `show_floor` | Vloerverwarming begane grond tonen | `true` |
+| `show_bathroom` | Badkamervloer (verdieping) tonen. `auto` toont hem zodra je `bath_supply` of `bath_return` invult | `auto` |
+| `show_radiators_ground` | Radiator op de begane grond tonen. `auto` toont hem zodra je `rad_ground_supply` of `rad_ground_return` invult | `auto` |
+| `show_garage` | Vloerverwarming garage tonen. `auto` toont hem zodra je `garage_supply` of `garage_return` invult | `auto` |
+| `view` | `full`, `drawing` of `details`, zie hieronder | `full` |
+| `layout` | `auto`, `horizontal` of `vertical`, zie hieronder | `auto` |
 | `reverse_flow` | Draait alle stroomanimaties om | `false` |
 
 ### Entiteiten
 
 | Sleutel | Betekenis |
 | --- | --- |
-| `supply` / `return` | Aanvoer- en retourtemperatuur (outlet / inlet) |
+| `supply` / `return` | Aanvoer- en retourtemperatuur van de warmtepomp zelf (outlet / inlet). Staan bij de buitenunit |
 | `delta` | ΔT, alleen nodig als je geen aanvoer en retour hebt |
 | `flow` | Waterdebiet (L/min) |
 | `power` | Elektrisch vermogen (W) |
@@ -88,13 +104,58 @@ entities:
 | `mode` / `work_mode` | Bedrijfsmodus en werkstand |
 | `setpoint` | Gewenste aanvoertemperatuur |
 | `thermostat` | `climate`-entiteit, toont de kamertemperatuur |
+| `rad_supply` / `rad_return` | Aanvoer en retour van de radiatoren (slaapkamers, verdieping) |
+| `rad_ground_supply` / `rad_ground_return` | Aanvoer en retour van de radiator op de begane grond |
+| `bath_supply` / `bath_return` | Aanvoer en retour van de vloerverwarming in de badkamer (verdieping) |
+| `floor_supply` / `floor_return` | Aanvoer en retour van de verdeler van de vloerverwarming op de begane grond |
+| `garage_supply` / `garage_return` | Aanvoer en retour van de vloerverwarmingsverdeler in de garage |
 | `floor_pump` / `radiator_pump` | Schakelaar van de pomp. Staat die uit, dan wordt het circuit grijs |
 | `energy_today` | Verbruik vandaag (kWh) |
+
+## Liggend scherm of losse kaarten
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-horizontal-dark.gif">
+    <img src="images/monoblock-horizontal-light.gif" alt="Liggend op een breed scherm" width="760">
+  </picture>
+</p>
+
+Op een breed of liggend scherm staat de tekening vanzelf links en staan de status en de waarden rechts ernaast, zodra de kaart ongeveer 920 pixels breed is. Je kunt dat ook zelf kiezen, of de kaart in tweeën splitsen:
+
+| Optie | Waarden | Standaard | Wat het doet |
+| --- | --- | --- | --- |
+| `layout` | `auto`, `horizontal`, `vertical` | `auto` | Tekening naast of boven de details |
+| `view` | `full`, `drawing`, `details` | `full` | Alles, alleen de tekening, of alleen de details |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-details-dark.png">
+    <img src="images/monoblock-details-light.png" alt="Alleen de details" width="620">
+  </picture>
+</p>
+
+Voor twee losse kaarten naast elkaar gebruik je dezelfde configuratie twee keer:
+
+```yaml
+type: horizontal-stack
+cards:
+  - type: custom:panasonic-monoblock-card
+    view: drawing
+    entities: { ... }
+  - type: custom:panasonic-monoblock-details-card
+    entities: { ... }
+```
+
+`panasonic-monoblock-details-card` is gewoon een kaart met `view: details`. In de detailkaart staan ook de waarden die anders in de tekening staan (aanvoer, retour, ΔT, buitenlucht, compressor, ventilator en debiet) als tegels. De temperaturen per circuit staan alleen in de tekening, behalve die van de garage.
+
+**De garage verhuist mee.** Bij een liggende weergave (en dus ook bij `layout: auto` op een breed scherm) staat de garage als los blok rechts, onder de waarden. Bij `view: drawing` staat de garage niet in de tekening, maar in de detailkaart (`view: details`), zodat hij bij een gesplitste opstelling maar één keer voorkomt. Heb je alleen de tekening nodig, zet dan `show_garage: false`.
 
 ---
 
 ## Goed om te weten
 
+- **Meerdere circuits:** de aanvoer en retour van de warmtepomp staan bij de buitenunit. Elk circuit in het huis toont zijn eigen aanvoer en retour, en zijn leidingen kleuren mee met die eigen temperaturen. Een circuit zonder eigen sensoren gebruikt de temperaturen van de warmtepomp. De circulatiepomp van de warmtepomp zit in de buitenunit getekend (rechtsonder, bij de retour). Circuits zonder pomp (zoals vloerverwarming die rechtstreeks aan de warmtepompcirculatie hangt) hebben geen pompsensor nodig: laat `floor_pump` weg, dan stroomt het zodra de warmtepomp circuleert.
 - **Stroomrichting:** de aanvoer loopt van de warmtepomp naar de radiatoren en de vloerverwarming, de retour loopt terug naar de warmtepomp. Staat een richting bij jou toch omgekeerd, zet dan `reverse_flow: true`.
 - De COP is een schatting als je geen `cop` of `heat_power` opgeeft: debiet × 4,186 × ΔT gedeeld door het elektrisch vermogen.
 - Een entiteit die niet bestaat, wordt stilletjes overgeslagen. Controleer bij een lege waarde of de entiteit-ID klopt.
