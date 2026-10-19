@@ -57,6 +57,9 @@ entities:
   setpoint: sensor.panasonic_target
   softstart: binary_sensor.wp_softstart_in_uitvoering
   thermostat: climate.woonkamer
+  # knoppen (optioneel)
+  power_switch: switch.panasonic_warmtepomp
+  operating_mode: select.panasonic_heat_pump_main_operating_mode_state
   # temperaturen per circuit (allemaal optioneel)
   rad_supply: sensor.radiatoren_aanvoer
   rad_return: sensor.radiatoren_retour
@@ -81,6 +84,8 @@ entities:
 | `show_radiators_ground` | Radiator op de begane grond tonen. `auto` toont hem zodra je `rad_ground_supply` of `rad_ground_return` invult | `auto` |
 | `show_garage` | Vloerverwarming garage tonen. `auto` toont hem zodra je `garage_supply` of `garage_return` invult | `auto` |
 | `temp_min` / `temp_max` | Temperatuurbereik van de kleurschaal van de leidingen: onder `temp_min` blauw, boven `temp_max` rood. Voor vloerverwarming bijvoorbeeld `20` en `40` | `20` / `55` |
+| `show_controls` | Aan/uit- en verwarmen/koelen-knoppen tonen (alleen als je `power_switch` / `operating_mode` invult) | `true` |
+| `mode_heat` / `mode_cool` | De opties van je `operating_mode`-select voor verwarmen en koelen | `Heat only` / `Cool only` |
 | `view` | `full`, `drawing` of `details`, zie hieronder | `full` |
 | `layout` | `auto`, `horizontal` of `vertical`, zie hieronder | `auto` |
 | `reverse_flow` | Draait alle stroomanimaties om | `false` |
@@ -111,6 +116,8 @@ entities:
 | `floor_supply` / `floor_return` | Aanvoer en retour van de verdeler van de vloerverwarming op de begane grond |
 | `garage_supply` / `garage_return` | Aanvoer en retour van de vloerverwarmingsverdeler in de garage |
 | `floor_pump` / `radiator_pump` | Schakelaar van de pomp. Staat die uit, dan wordt het circuit grijs |
+| `power_switch` | Schakelaar (`switch`, `input_boolean`) om de warmtepomp aan en uit te zetten. Toont een Aan/Uit-knop |
+| `operating_mode` | `select`-entiteit voor de bedrijfsmodus. Toont de knoppen Verwarmen en Koelen. Voorbeeld: `select.panasonic_heat_pump_main_operating_mode_state` |
 | `energy_today` | Verbruik vandaag (kWh) |
 
 ## Liggend scherm of losse kaarten
@@ -122,7 +129,7 @@ entities:
   </picture>
 </p>
 
-Op een breed of liggend scherm staat de tekening vanzelf links en staan de status en de waarden rechts ernaast, zodra de kaart ongeveer 920 pixels breed is. Je kunt dat ook zelf kiezen, of de kaart in tweeën splitsen:
+Op een breed of liggend scherm staat de tekening vanzelf links en staan de status en de waarden rechts ernaast, zodra de kaart ongeveer 1000 pixels breed is. Je kunt dat ook zelf kiezen, of de kaart in tweeën splitsen:
 
 | Optie | Waarden | Standaard | Wat het doet |
 | --- | --- | --- | --- |
@@ -148,9 +155,7 @@ cards:
     entities: { ... }
 ```
 
-`panasonic-monoblock-details-card` is gewoon een kaart met `view: details`. In de detailkaart staan ook de waarden die anders in de tekening staan (aanvoer, retour, ΔT, buitenlucht, compressor, ventilator en debiet) als tegels. De temperaturen per circuit staan alleen in de tekening, behalve die van de garage.
-
-**De garage verhuist mee.** Bij een liggende weergave (en dus ook bij `layout: auto` op een breed scherm) staat de garage als los blok rechts, onder de waarden. Bij `view: drawing` staat de garage standaard niet in de tekening, maar in de detailkaart (`view: details`), zodat hij bij een gesplitste opstelling maar één keer voorkomt. Wil je hem liever in de tekening hebben, zet dan `show_garage: true` bij de tekeningkaart en `show_garage: false` bij de detailkaart.
+`panasonic-monoblock-details-card` is gewoon een kaart met `view: details`. In de detailkaart staan ook de waarden die anders in de tekening staan (aanvoer, retour, ΔT, buitenlucht, compressor, ventilator en debiet) als tegels. De temperaturen per circuit staan alleen in de tekening.
 
 ---
 

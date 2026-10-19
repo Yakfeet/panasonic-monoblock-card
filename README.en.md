@@ -57,6 +57,9 @@ entities:
   setpoint: sensor.panasonic_target
   softstart: binary_sensor.wp_softstart_in_uitvoering
   thermostat: climate.woonkamer
+  # buttons (optional)
+  power_switch: switch.panasonic_heat_pump
+  operating_mode: select.panasonic_heat_pump_main_operating_mode_state
   # temperatures per circuit (all optional)
   rad_supply: sensor.radiators_supply
   rad_return: sensor.radiators_return
@@ -81,6 +84,8 @@ entities:
 | `show_radiators_ground` | Show the radiator on the ground floor. `auto` shows it as soon as you fill in `rad_ground_supply` or `rad_ground_return` | `auto` |
 | `show_garage` | Show the garage underfloor heating. `auto` shows it as soon as you fill in `garage_supply` or `garage_return` | `auto` |
 | `temp_min` / `temp_max` | Temperature range of the pipe colour scale: blue at or below `temp_min`, red at or above `temp_max`. For underfloor heating try `20` and `40` | `20` / `55` |
+| `show_controls` | Show the on/off and heat/cool buttons (only when you fill in `power_switch` / `operating_mode`) | `true` |
+| `mode_heat` / `mode_cool` | The options of your `operating_mode` select for heating and cooling | `Heat only` / `Cool only` |
 | `view` | `full`, `drawing` or `details`, see below | `full` |
 | `layout` | `auto`, `horizontal` or `vertical`, see below | `auto` |
 | `reverse_flow` | Reverses all flow animations | `false` |
@@ -111,6 +116,8 @@ entities:
 | `floor_supply` / `floor_return` | Supply and return of the ground floor underfloor heating manifold |
 | `garage_supply` / `garage_return` | Supply and return of the garage underfloor heating manifold |
 | `floor_pump` / `radiator_pump` | Pump switch. If it is off, that circuit turns grey |
+| `power_switch` | Switch (`switch`, `input_boolean`) to turn the heat pump on and off. Shows an On/Off button |
+| `operating_mode` | `select` entity for the operating mode. Shows the Heat and Cool buttons. Example: `select.panasonic_heat_pump_main_operating_mode_state` |
 | `energy_today` | Energy used today (kWh) |
 
 ## Landscape screens and separate cards
@@ -122,7 +129,7 @@ entities:
   </picture>
 </p>
 
-On a wide or landscape screen the drawing automatically sits on the left, with the status and values next to it, as soon as the card is about 920 pixels wide. You can also choose this yourself, or split the card in two:
+On a wide or landscape screen the drawing automatically sits on the left, with the status and values next to it, as soon as the card is about 1000 pixels wide. You can also choose this yourself, or split the card in two:
 
 | Option | Values | Default | What it does |
 | --- | --- | --- | --- |
@@ -148,9 +155,7 @@ cards:
     entities: { ... }
 ```
 
-`panasonic-monoblock-details-card` is simply a card with `view: details`. The details card also shows the values that are otherwise in the drawing (supply, return, ΔT, outdoor air, compressor, fan and flow) as tiles. The per-circuit temperatures are only in the drawing, except those of the garage.
-
-**The garage moves along.** In a landscape layout (so also with `layout: auto` on a wide screen) the garage appears as a separate block on the right, under the values. With `view: drawing` the garage is by default not in the drawing but in the details card (`view: details`), so in a split setup it appears only once. If you would rather have it in the drawing, set `show_garage: true` on the drawing card and `show_garage: false` on the details card.
+`panasonic-monoblock-details-card` is simply a card with `view: details`. The details card also shows the values that are otherwise in the drawing (supply, return, ΔT, outdoor air, compressor, fan and flow) as tiles. The per-circuit temperatures are only in the drawing.
 
 ---
 
