@@ -2,7 +2,7 @@
 
 🇳🇱 [Nederlandse versie](README.md)
 
-An animated dashboard card for a **Panasonic monoblock heat pump without a buffer tank** (`custom:panasonic-monoblock-card`). The outdoor unit with fan, compressor and heat exchanger is connected straight to the radiators and the underfloor heating. The fan and pumps spin, water flows through the pipes, and pipes and circuits change colour with temperature.
+An animated dashboard card for a **Panasonic monoblock heat pump without a buffer tank** (`custom:panasonic-monoblock-card`). The outdoor unit is drawn as the dark Panasonic monoblock, with the fan behind the grille and, on the right, a look inside at the components: compressor, accumulator, plate heat exchanger and the copper refrigerant lines. The unit is connected straight to the radiators and the underfloor heating. The fan and pumps spin, water flows through the pipes, and pipes and circuits change colour with temperature.
 
 <p align="center">
   <picture>
@@ -27,8 +27,6 @@ Do you also have an Atlantic Explorer heat pump water heater? There is a separat
 2. Click ⋮ in the top right → **Custom repositories**.
 3. Paste the URL of this repository, choose type **Dashboard** and click **Add**.
 4. Search for **Panasonic Monoblock Card**, click **Download** and reload the browser (Ctrl+F5).
-
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Yakfeet&repository=panasonic-monoblock-card&category=plugin)
 
 ### Manual
 

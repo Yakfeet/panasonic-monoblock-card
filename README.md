@@ -2,7 +2,7 @@
 
 🇬🇧 [English version](README.en.md)
 
-Een geanimeerde dashboardkaart voor een **Panasonic monoblock-warmtepomp zonder buffervat** (`custom:panasonic-monoblock-card`). De buitenunit met ventilator, compressor en warmtewisselaar is rechtstreeks verbonden met de radiatoren en de vloerverwarming. Ventilator en pompen draaien, het water stroomt door de leidingen en leidingen en circuits kleuren mee met de temperatuur.
+Een geanimeerde dashboardkaart voor een **Panasonic monoblock-warmtepomp zonder buffervat** (`custom:panasonic-monoblock-card`). De buitenunit is getekend als de donkere Panasonic-monoblock, met de ventilator achter het rooster en rechts een inkijkje in de componenten: compressor, accumulator, platenwisselaar en de koperen koudemiddelleidingen. De unit is rechtstreeks verbonden met de radiatoren en de vloerverwarming. Ventilator en pompen draaien, het water stroomt door de leidingen en leidingen en circuits kleuren mee met de temperatuur.
 
 <p align="center">
   <picture>
@@ -27,8 +27,6 @@ Heb je ook een Atlantic Explorer warmtepompboiler? Daar is een aparte kaart voor
 2. Klik rechtsboven op ⋮ → **Aangepaste repositories**.
 3. Plak de URL van deze repository, kies type **Dashboard** en klik **Toevoegen**.
 4. Zoek **Panasonic Monoblock Card**, klik **Downloaden** en herlaad de browser (Ctrl+F5).
-
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Yakfeet&repository=panasonic-monoblock-card&category=plugin)
 
 ### Handmatig
 
