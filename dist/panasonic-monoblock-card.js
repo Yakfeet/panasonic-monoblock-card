@@ -202,7 +202,11 @@ class PanasonicMonoblockCard extends WPBase {
     const hasV = (k) => this._has(k + '_supply') || this._has(k + '_return');
     const vals = (k) => `Aanvoer <tspan class="sm" data-e="${k}_supply">${fmt(this._n(k + '_supply'), 1, ' °C')}</tspan>`;
     const valr = (k) => `Retour <tspan class="sm" data-e="${k}_return">${fmt(this._n(k + '_return'), 1, ' °C')}</tspan>`;
-    const tag2 = (x, y, name, k) => `<text x="${x}" y="${y}" class="lbl">${name}</text>` + (hasV(k) ? `<text x="${x}" y="${y + 15}" class="lbl">${vals(k)}</text><text x="${x}" y="${y + 29}" class="lbl">${valr(k)}</text>` : '');
+    const vald = (k) => {
+      const a = this._n(k + '_supply'), b = this._n(k + '_return');
+      return isNum(a) && isNum(b) ? `ΔT <tspan class="sm">${fmt(a - b, 1, ' °C')}</tspan>` : '';
+    };
+    const tag2 = (x, y, name, k) => `<text x="${x}" y="${y}" class="lbl">${name}</text>` + (hasV(k) ? `<text x="${x}" y="${y + 15}" class="lbl">${vals(k)}</text><text x="${x}" y="${y + 29}" class="lbl">${valr(k)}</text>` + (vald(k) ? `<text x="${x}" y="${y + 43}" class="lbl">${vald(k)}</text>` : '') : '');
     /* lus van een verdeler: vier banen, de verdeler staat rechts */
     const loopPath = (y0, xv = 584, xL = xv - 72) => `M${xv} ${y0} H${xL} C${xL - 12} ${y0} ${xL - 12} ${y0 + 14} ${xL} ${y0 + 14} H${xv - 28} C${xv - 12} ${y0 + 14} ${xv - 12} ${y0 + 28} ${xv - 28} ${y0 + 28} H${xL} C${xL - 12} ${y0 + 28} ${xL - 12} ${y0 + 42} ${xL} ${y0 + 42} H${xv}`;
     const loopBox = (x, y, lines) => `<rect x="${x}" y="${y}" width="36" height="76" rx="6" style="fill:var(--card-background-color)" stroke="#c3c8ce" stroke-width="2.5"/>${lines.map((l) => `<line x1="${x + 6}" y1="${l}" x2="${x + 30}" y2="${l}" stroke="rgba(150,150,150,.6)"/>`).join('')}`;
@@ -239,13 +243,13 @@ class PanasonicMonoblockCard extends WPBase {
     ].filter((i) => i && this._has(i[0]));
     const cols = [22, 116, 210];
     const GY = 96;
-    const H = Math.max(yB + 24, 450);
+    const H = Math.max(yB + 24, 466);
     const W = showG ? 860 : 700;
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
     const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
     const nearSvg = `<rect x="14" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="409" class="lbl">Aanvoer</text><text x="22" y="426" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
-      <rect x="94" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, tLo, tHi) : GREY}"/><text x="102" y="409" class="lbl">Retour</text><text x="102" y="426" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
-      <text x="182" y="409" class="lbl">ΔT</text><text x="182" y="426" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dTv, 1, ' K')}</text>`;
+      <rect x="108" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, tLo, tHi) : GREY}"/><text x="116" y="409" class="lbl">Retour</text><text x="116" y="426" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
+      <text x="210" y="409" class="lbl">ΔT</text><text x="210" y="426" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dTv, 1, ' °C')}</text>`;
     const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${GY + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${GY + 17 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
 
     /* Waterleidingen, getekend in stroomrichting (huiscoördinaten, die later 60 naar rechts schuiven).
@@ -285,7 +289,7 @@ class PanasonicMonoblockCard extends WPBase {
       <text x="22" y="16" class="zone">BUITEN</text>
       <g transform="translate(60 0)">
         <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
-        <rect x="296" y="212" width="${showG ? 480 : 344}" height="6" fill="rgba(150,150,150,.3)"/>
+        <rect x="296" y="226" width="${showG ? 480 : 344}" height="6" fill="rgba(150,150,150,.3)"/>
       </g>
       ${topSvg}
 
@@ -399,7 +403,7 @@ class PanasonicMonoblockCard extends WPBase {
         ${tag2(gx - 84, 392, 'Garage vloer', 'garage')}` : ''}
 
       <text x="338" y="18" class="zone">VERDIEPING</text>
-      <text x="338" y="236" class="zone">BEGANE GROND</text>
+      <text x="338" y="248" class="zone">BEGANE GROND</text>
 
       ${showF && this._has('floor_pump') ? this._pump(602, 270, floorOn) : ''}
       ${showR && this._has('radiator_pump') ? this._pump(312, 150, radOn) : ''}
@@ -449,7 +453,7 @@ class PanasonicMonoblockCard extends WPBase {
     /* in de losse detailkaart ontbreken de waarden die anders in de tekening staan, die komen dan als tegels */
     const dTiles = view === 'details' ? [
       this._stat('Aanvoer', fmt(sup, 1, ' °C'), 'supply'), this._stat('Retour', fmt(ret, 1, ' °C'), 'return'),
-      this._stat('ΔT', fmt(dTv, 1, ' K'), this._has('delta') ? 'delta' : ''),
+      this._stat('ΔT', fmt(dTv, 1, ' °C'), this._has('delta') ? 'delta' : ''),
       ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
     ].join('') : '';
     /* knoppen: aan/uit (switch) en verwarmen/koelen (select) */
