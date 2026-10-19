@@ -6,14 +6,14 @@ An animated dashboard card for a **Panasonic monoblock heat pump without a buffe
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-dark.gif">
-    <img src="images/monoblock-light.gif" alt="Panasonic monoblock card" width="560">
+    <source media="(prefers-color-scheme: dark)" srcset="images/en/monoblock-dark.gif">
+    <img src="images/en/monoblock-light.gif" alt="Panasonic monoblock card" width="560">
   </picture>
 </p>
 
 <p align="center"><em>Example with demo values. In Home Assistant the animations follow the live status.</em></p>
 
-The look is inspired by [AMensink/warmtepomp-cards](https://github.com/AMensink/warmtepomp-cards) (MIT). The code was written from scratch. Card labels are in Dutch. Animations stop automatically if your device has "reduce motion" enabled.
+The look is inspired by [AMensink/warmtepomp-cards](https://github.com/AMensink/warmtepomp-cards) (MIT). The code was written from scratch. The card is available in **Dutch** and **English** and automatically uses the language of your Home Assistant. Animations stop automatically if your device has "reduce motion" enabled.
 
 Do you also have an Atlantic Explorer heat pump water heater? There is a separate card for that: `atlantic-explorer-card`.
 
@@ -77,7 +77,8 @@ entities:
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `title` | Card title | `Warmtepomp` |
+| `title` | Card title | by language (`Warmtepomp` / `Heat pump`) |
+| `language` | Card language: `nl` or `en`. Defaults to the Home Assistant language | automatic |
 | `show_radiators` | Show the radiator circuit | `true` |
 | `show_floor` | Show underfloor heating, ground floor | `true` |
 | `show_bathroom` | Show the bathroom floor (first floor). `auto` shows it as soon as you fill in `bath_supply` or `bath_return` | `auto` |
@@ -124,8 +125,8 @@ entities:
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-horizontal-dark.gif">
-    <img src="images/monoblock-horizontal-light.gif" alt="Landscape on a wide screen" width="760">
+    <source media="(prefers-color-scheme: dark)" srcset="images/en/monoblock-horizontal-dark.gif">
+    <img src="images/en/monoblock-horizontal-light.gif" alt="Landscape on a wide screen" width="760">
   </picture>
 </p>
 
@@ -138,8 +139,8 @@ On a wide or landscape screen the drawing automatically sits on the left, with t
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="images/monoblock-details-dark.png">
-    <img src="images/monoblock-details-light.png" alt="Details only" width="620">
+    <source media="(prefers-color-scheme: dark)" srcset="images/en/monoblock-details-dark.png">
+    <img src="images/en/monoblock-details-light.png" alt="Details only" width="620">
   </picture>
 </p>
 
@@ -165,6 +166,12 @@ cards:
 - **Flow direction:** the supply runs from the heat pump to the radiators and the underfloor heating, and the return runs back to the heat pump. If a direction looks reversed on your setup, set `reverse_flow: true`.
 - The COP is an estimate unless you provide `cop` or `heat_power`: flow × 4.186 × ΔT divided by electrical power.
 - An entity that does not exist is silently skipped. If a value stays empty, check that the entity ID is correct.
+
+## Language
+
+The card automatically uses the language of your Home Assistant, including the number format (comma or point). **Dutch** and **English** are available; any other language falls back to English. To use a different language than Home Assistant, set `language: nl` or `language: en`. The names of the modes (such as Heat only) come from your own select; set them with `mode_heat` and `mode_cool`.
+
+You can add a language in `dist/panasonic-monoblock-card.js`: copy the `en` block in the `TR` table at the top, give it the language code (for example `de`) and translate the texts. Pull requests are welcome.
 
 ## License
 

@@ -13,7 +13,7 @@ Een geanimeerde dashboardkaart voor een **Panasonic monoblock-warmtepomp zonder 
 
 <p align="center"><em>Voorbeeld met demowaarden. In Home Assistant volgen de animaties de live status.</em></p>
 
-De opmaak is geïnspireerd op [AMensink/warmtepomp-cards](https://github.com/AMensink/warmtepomp-cards) (MIT). De code is opnieuw geschreven. Alle labels zijn in het Nederlands. Animaties stoppen automatisch als je apparaat "verminderde beweging" heeft ingesteld.
+De opmaak is geïnspireerd op [AMensink/warmtepomp-cards](https://github.com/AMensink/warmtepomp-cards) (MIT). De code is opnieuw geschreven. De kaart is in het **Nederlands** en **Engels** beschikbaar en gebruikt automatisch de taal van je Home Assistant. Animaties stoppen automatisch als je apparaat "verminderde beweging" heeft ingesteld.
 
 Heb je ook een Atlantic Explorer warmtepompboiler? Daar is een aparte kaart voor: `atlantic-explorer-card`.
 
@@ -77,7 +77,8 @@ entities:
 
 | Optie | Omschrijving | Standaard |
 | --- | --- | --- |
-| `title` | Titel van de kaart | `Warmtepomp` |
+| `title` | Titel van de kaart | op taal (`Warmtepomp` / `Heat pump`) |
+| `language` | Taal van de kaart: `nl` of `en`. Standaard de taal van Home Assistant | automatisch |
 | `show_radiators` | Radiatorcircuit tonen | `true` |
 | `show_floor` | Vloerverwarming begane grond tonen | `true` |
 | `show_bathroom` | Badkamervloer (verdieping) tonen. `auto` toont hem zodra je `bath_supply` of `bath_return` invult | `auto` |
@@ -165,6 +166,12 @@ cards:
 - **Stroomrichting:** de aanvoer loopt van de warmtepomp naar de radiatoren en de vloerverwarming, de retour loopt terug naar de warmtepomp. Staat een richting bij jou toch omgekeerd, zet dan `reverse_flow: true`.
 - De COP is een schatting als je geen `cop` of `heat_power` opgeeft: debiet × 4,186 × ΔT gedeeld door het elektrisch vermogen.
 - Een entiteit die niet bestaat, wordt stilletjes overgeslagen. Controleer bij een lege waarde of de entiteit-ID klopt.
+
+## Taal
+
+De kaart gebruikt automatisch de taal van je Home Assistant, ook voor de getalnotatie (komma of punt). Er zijn **Nederlands** en **Engels**; elke andere taal valt terug op Engels. Wil je een andere taal dan Home Assistant gebruikt, zet dan `language: nl` of `language: en`. De namen van de modi (zoals Heat only) komen uit je eigen select; stel ze in met `mode_heat` en `mode_cool`.
+
+Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `en`-blok in de `TR`-tabel bovenin, geef het de taalcode (bijvoorbeeld `de`) en vertaal de teksten. Pull requests zijn welkom.
 
 ## Licentie
 
