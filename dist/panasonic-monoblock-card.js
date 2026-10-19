@@ -126,8 +126,10 @@ class WPBase extends HTMLElement {
       .air{stroke-dasharray:5 5;animation:air 1s linear infinite}
       .haze{animation:rise 2s ease-in-out infinite}
       .glow{animation:glow 1.4s ease-in-out infinite}
+      @keyframes rflow{to{stroke-dashoffset:-38}}
+      .rf{stroke-dasharray:3 35;stroke-linecap:round;animation:rflow 1.6s linear infinite}
       svg.rev .flow,svg.rev .air{animation-direction:reverse}
-      @media (prefers-reduced-motion:reduce){.spin,.flow,.air,.haze,.glow{animation:none!important}}
+      @media (prefers-reduced-motion:reduce){.spin,.flow,.air,.haze,.glow,.rf{animation:none!important}}
     </style>
     <ha-card>
       <div class="head"><div class="title">${title}</div>${pill ? `<div class="pill ${pill.cls || ''}">${pill.text}</div>` : ''}</div>
@@ -189,51 +191,99 @@ class PanasonicMonoblockCard extends WPBase {
       ['flow', 'Debiet', fmt(flow, 1, ' L/min')],
       ['setpoint', 'Doel aanvoer', fmt(this._n('setpoint'), 1, ' °C')],
     ].filter((i) => i && this._has(i[0]));
-    const cols = [22, 104, 186];
-    const H = Math.max(420, 345 + Math.ceil(gridItems.length / 3) * 44 + 8);
+    const cols = [22, 116, 210];
+    const GY = 308;
+    const H = Math.max(420, GY + Math.ceil(gridItems.length / 3) * 44 + 8);
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
-    const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${345 + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${362 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
+    const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${GY + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${GY + 17 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
 
     /* Waterleidingen, getekend in stroomrichting.
        Aanvoer: warmtepomp -> huis.  Retour: huis -> warmtepomp. */
-    const supMain = 'M228 252 H601 V290';              // aanvoer naar verdeler vloerverwarming
-    const supRiser = 'M320 252 V84 H428';              // aanvoer naar radiatoren
-    const retRad = 'M562 118 H632 V392 H296 V278 H228'; // retour radiatoren -> warmtepomp
+    const supMain = 'M262 270 H601 V290';              // aanvoer naar verdeler vloerverwarming
+    const supRiser = 'M320 270 V84 H428';              // aanvoer naar radiatoren
+    const retRad = 'M562 118 H632 V392 H296 V296 H262'; // retour radiatoren -> warmtepomp
     const floorOut = 'M584 300 H382 C366 300 366 318 382 318 H556 C572 318 572 336 556 336 H382 C366 336 366 354 382 354 H584'; // verdeler -> lus -> verdeler
     const floorRet = 'M601 372 V392 H632';             // verdeler -> retourleiding
     const fins = Array.from({ length: 10 }, (_, i) => `<rect x="${432 + i * 13.2}" y="76" width="9" height="48" rx="3" fill="${radOn ? avgC : GREY}" fill-opacity="${radOn ? 1 : 0.5}"/>`).join('');
     const haze = (x, y, d) => `<path class="haze" style="animation-delay:${d}s" d="M${x} ${y} q5 -6 0 -12 t0 -12" fill="none" stroke="${avgC}" stroke-width="2" stroke-linecap="round"/>`;
 
     const svg = `
-    <svg viewBox="0 0 640 ${H}" class="${c.reverse_flow ? 'rev' : ''}">
+    <svg viewBox="0 0 700 ${H}" class="${c.reverse_flow ? 'rev' : ''}">
       <defs>
         <pattern id="${u}h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="rgba(150,150,150,.5)" stroke-width="2"/></pattern>
       </defs>
       <!-- buitenpaneel + muur -->
-      <rect x="0" y="0" width="262" height="${H}" rx="6" fill="rgba(110,150,210,.10)"/>
+      <rect x="0" y="0" width="322" height="${H}" rx="6" fill="rgba(110,150,210,.10)"/>
       <text x="22" y="16" class="zone">BUITEN</text>
-      <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
-      <rect x="296" y="170" width="344" height="6" fill="rgba(150,150,150,.3)"/>
-      <text x="338" y="18" class="zone">VERDIEPING</text>
-      <text x="338" y="196" class="zone">BEGANE GROND</text>
+      <g transform="translate(60 0)">
+        <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
+        <rect x="296" y="170" width="344" height="6" fill="rgba(150,150,150,.3)"/>
+        <text x="338" y="18" class="zone">VERDIEPING</text>
+        <text x="338" y="196" class="zone">BEGANE GROND</text>
+      </g>
       ${topSvg}
 
-      <!-- buitenunit -->
-      <rect x="18" y="70" width="226" height="236" rx="14" fill="none" stroke="#c3c8ce" stroke-opacity=".8" stroke-width="3"/>
-      <rect x="34" y="306" width="22" height="8" rx="2" fill="${GREY}"/><rect x="206" y="306" width="22" height="8" rx="2" fill="${GREY}"/>
-      ${[110, 135, 160].map((y, i) => `<path d="M4 ${y} q10 8 4 20" fill="none" stroke="#4c8df0" stroke-width="2.2" stroke-opacity="${running ? 0.9 : 0.3}" ${running ? `class="air" style="animation-delay:${i * 0.25}s"` : ''}/>`).join('')}
-      ${this._fan(92, 160, 60, fanOn, fanDur, true)}
-      <rect x="190" y="100" width="36" height="72" rx="16" fill="#9aa0a6" stroke="rgba(0,0,0,.2)" data-e="compressor"/>
-      <rect x="202" y="92" width="12" height="12" rx="3" fill="#9aa0a6"/>
-      <circle cx="208" cy="152" r="5" fill="${running ? '#3fcf5a' : '#5b6068'}"/>
-      <rect x="190" y="236" width="38" height="56" rx="5" fill="rgba(127,127,127,.25)" stroke="#9aa0a6"/>
-      ${[246, 256, 266, 276].map((y) => `<line x1="194" y1="${y}" x2="224" y2="${y}" stroke="rgba(150,150,150,.6)"/>`).join('')}
-      ${this._pipe('M208 172 V236', '#e8551f', running, 4)}
-      ${this._pipe('M190 270 H40 V240', '#3b82f6', running, 4)}
-      <polygon points="115,262 123,270 115,278 107,270" fill="#9aa0a6"/>
-      ${defrost ? `<rect x="34" y="82" width="100" height="20" rx="10" fill="#e8590c"/><text x="84" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">ONTDOOIEN</text>` : ''}
+      <!-- buitenunit: donkere monoblock, rechts met "glazen" paneel zodat je de componenten ziet -->
+      ${[140, 164, 188].map((y, i) => `<line x1="26" y1="${y}" x2="9" y2="${y}" stroke="${running ? '#4c8df0' : GREY}" stroke-opacity="${running ? 0.95 : 0.4}" stroke-width="2.4" stroke-linecap="round" ${running ? `class="air" style="animation-delay:${i * 0.25}s"` : ''}/><path d="M13 ${y - 5} L7 ${y} L13 ${y + 5}" fill="none" stroke="${running ? '#4c8df0' : GREY}" stroke-opacity="${running ? 0.95 : 0.4}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
+      <g transform="translate(30 92) scale(.26)">
+        <defs>
+          <linearGradient id="${u}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#43464c"/><stop offset="1" stop-color="#2e3136"/></linearGradient>
+          <linearGradient id="${u}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a22"/><stop offset=".45" stop-color="#e8c56b"/><stop offset="1" stop-color="#9c7a2a"/></linearGradient>
+          <linearGradient id="${u}c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15161a"/><stop offset=".35" stop-color="#40444b"/><stop offset="1" stop-color="#17181c"/></linearGradient>
+          <linearGradient id="${u}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${circ ? supC : GREY}"/><stop offset="1" stop-color="${circ ? retC : GREY}"/></linearGradient>
+        </defs>
+        <!-- voetrail -->
+        <rect x="4" y="574" width="1023" height="50" rx="6" fill="#2a2c30" stroke="#4a4d54" stroke-width="4"/>
+        <rect x="200" y="590" width="110" height="20" rx="4" fill="#15161a"/><rect x="720" y="590" width="110" height="20" rx="4" fill="#15161a"/>
+        <!-- behuizing -->
+        <rect x="0" y="0" width="1030" height="562" rx="12" fill="url(#${u}b)" stroke="#5a5e66" stroke-width="5"/>
+        <rect x="0" y="0" width="1030" height="16" rx="8" fill="#2a2c30"/>
+        <line x1="467" y1="16" x2="467" y2="562" stroke="#202226" stroke-width="5"/>
+        <rect x="37" y="32" width="75" height="35" rx="9" fill="#1c1d20" stroke="#55595f" stroke-width="4"/>
+        <!-- ventilator met rooster -->
+        <rect x="15" y="77" width="447" height="393" rx="10" fill="#1b1c1f"/>
+        <circle cx="250" cy="275" r="195" fill="#121315"/>
+        <g class="sp ${fanOn ? 'spin' : ''}" style="transform-origin:250px 275px;--spin:${fanDur}s">
+          ${[0, 120, 240].map((a) => `<ellipse cx="250" cy="${275 - 100}" rx="62" ry="98" fill="#4b5057" stroke="#6b7179" stroke-width="4" transform="rotate(${a} 250 275)"/>`).join('')}
+        </g>
+        <circle cx="250" cy="275" r="30" fill="#8b9097"/><circle cx="250" cy="275" r="9" fill="#3a3d42"/>
+        ${Array.from({ length: 17 }, (_, i) => `<line x1="22" y1="${88 + i * 22.4}" x2="455" y2="${88 + i * 22.4}" stroke="#555a62" stroke-opacity=".6" stroke-width="5"/>`).join('')}
+        ${Array.from({ length: 9 }, (_, i) => `<line x1="${60 + i * 48}" y1="84" x2="${60 + i * 48}" y2="464" stroke="#555a62" stroke-opacity=".35" stroke-width="4"/>`).join('')}
+        <rect x="15" y="77" width="447" height="393" rx="10" fill="none" stroke="#5c6068" stroke-width="8"/>
+        ${defrost ? '<rect x="15" y="77" width="447" height="393" rx="10" fill="rgba(190,225,255,.3)"/>' : ''}
+        <!-- rechter panelen: donker glas met de componenten erachter -->
+        <rect x="500" y="300" width="70" height="190" rx="30" fill="url(#${u}c)"/>
+        <rect x="598" y="250" width="134" height="250" rx="40" fill="url(#${u}c)" stroke="${running ? '#5b9a68' : '#3a3d42'}" stroke-width="5" data-e="compressor"/>
+        <rect x="640" y="228" width="50" height="26" rx="6" fill="#2a2c30"/>
+        <rect x="480" y="505" width="420" height="14" rx="4" fill="#2c2f34"/>
+        ${(() => {
+          const rp = (d, col, dur = 1.6) => `<path d="${d}" fill="none" stroke="#6b4a2e" stroke-opacity=".9" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>` +
+            `<path d="${d}" fill="none" stroke="${running ? col : '#a07c58'}" stroke-opacity="${running ? 1 : 0.7}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>` +
+            (running ? `<path class="rf" style="animation-duration:${dur}s" d="${d}" fill="none" stroke="#fff3df" stroke-opacity=".9" stroke-width="7"/>` : '');
+          return rp('M480 90 H535 V300', '#8ac4ff') +
+            rp('M570 450 H598', '#8ac4ff') + rp('M665 228 V150 H885', '#e5392b') + rp('M960 398 V535 H778', '#f08a24') + rp('M742 535 H480', '#4aa3f0');
+        })()}
+        <polygon points="760,517 778,535 760,553 742,535" fill="#d8b35a" stroke="#6b4a2e" stroke-width="4"/>
+        <!-- platenwisselaar met het water erin -->
+        <rect x="885" y="90" width="120" height="320" rx="22" fill="url(#${u}g)" stroke="#6b4a2e" stroke-width="5"/>
+        <rect x="910" y="118" width="70" height="264" rx="12" fill="url(#${u}w)" fill-opacity="${circ ? 0.9 : 0.35}"/>
+        ${Array.from({ length: 8 }, (_, i) => `<line x1="910" y1="${148 + i * 30}" x2="980" y2="${148 + i * 30}" stroke="rgba(0,0,0,.28)" stroke-width="4"/>`).join('')}
+        <circle cx="980" cy="120" r="17" fill="${circ ? supC : GREY}" stroke="#3a2a18" stroke-width="5"/><circle cx="900" cy="410" r="17" fill="${circ ? retC : GREY}" stroke="#3a2a18" stroke-width="5"/>
+        <!-- paneelglas, deurgreep en statuslampje -->
+        <rect x="470" y="16" width="560" height="546" fill="rgba(10,12,16,.42)" pointer-events="none"/>
+        <line x1="715" y1="16" x2="715" y2="562" stroke="#202226" stroke-width="5" stroke-opacity=".7"/>
+        <rect x="557" y="182" width="77" height="38" rx="9" fill="#1c1d20" stroke="#55595f" stroke-width="4"/>
+        <rect x="902" y="25" width="78" height="35" rx="9" fill="#1c1d20" stroke="#55595f" stroke-width="4"/>
+        <circle cx="595" cy="120" r="10" fill="${running ? '#3fcf5a' : '#5b6068'}"/>
+      </g>
+      ${defrost ? `<rect x="30" y="68" width="100" height="20" rx="10" fill="#e8590c"/><text x="80" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">ONTDOOIEN</text>` : ''}
       ${gridSvg}
 
+      <!-- aansluitingen van de platenwisselaar naar de muur -->
+      ${this._pipe('M285 123 V270 H322', supC, circ, 6, fd)}
+      ${this._pipe('M322 296 H264 V199', retC, circ, 6, fd)}
+
+      <g transform="translate(60 0)">
       <!-- waterleidingen huis: retour onder, aanvoer erboven -->
       ${this._pipe(retRad, retC, circ, 6, fd)}
       ${this._pipe(supMain, supC, circ, 6, fd)}
@@ -262,6 +312,7 @@ class PanasonicMonoblockCard extends WPBase {
       <text x="430" y="38" class="lbl">Aanvoer</text><text x="430" y="55" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
       <text x="505" y="38" class="lbl">Retour</text><text x="505" y="55" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
       <text x="575" y="38" class="lbl">ΔT</text><text x="575" y="55" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dT, 1, ' K')}</text>
+      </g>
     </svg>`;
 
     const modeS = this._st('mode');
