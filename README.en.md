@@ -80,6 +80,7 @@ entities:
 | `show_bathroom` | Show the bathroom floor (first floor). `auto` shows it as soon as you fill in `bath_supply` or `bath_return` | `auto` |
 | `show_radiators_ground` | Show the radiator on the ground floor. `auto` shows it as soon as you fill in `rad_ground_supply` or `rad_ground_return` | `auto` |
 | `show_garage` | Show the garage underfloor heating. `auto` shows it as soon as you fill in `garage_supply` or `garage_return` | `auto` |
+| `temp_min` / `temp_max` | Temperature range of the pipe colour scale: blue at or below `temp_min`, red at or above `temp_max`. For underfloor heating try `20` and `40` | `20` / `55` |
 | `view` | `full`, `drawing` or `details`, see below | `full` |
 | `layout` | `auto`, `horizontal` or `vertical`, see below | `auto` |
 | `reverse_flow` | Reverses all flow animations | `false` |

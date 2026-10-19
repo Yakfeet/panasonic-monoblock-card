@@ -80,6 +80,7 @@ entities:
 | `show_bathroom` | Badkamervloer (verdieping) tonen. `auto` toont hem zodra je `bath_supply` of `bath_return` invult | `auto` |
 | `show_radiators_ground` | Radiator op de begane grond tonen. `auto` toont hem zodra je `rad_ground_supply` of `rad_ground_return` invult | `auto` |
 | `show_garage` | Vloerverwarming garage tonen. `auto` toont hem zodra je `garage_supply` of `garage_return` invult | `auto` |
+| `temp_min` / `temp_max` | Temperatuurbereik van de kleurschaal van de leidingen: onder `temp_min` blauw, boven `temp_max` rood. Voor vloerverwarming bijvoorbeeld `20` en `40` | `20` / `55` |
 | `view` | `full`, `drawing` of `details`, zie hieronder | `full` |
 | `layout` | `auto`, `horizontal` of `vertical`, zie hieronder | `auto` |
 | `reverse_flow` | Draait alle stroomanimaties om | `false` |
