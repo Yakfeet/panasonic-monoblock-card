@@ -78,6 +78,7 @@ entities:
 | Optie | Omschrijving | Standaard |
 | --- | --- | --- |
 | `title` | Titel van de kaart | op taal (`Warmtepomp` / `Heat pump`) |
+| `labels` | Eigen teksten voor de kaart en de knoppen, zie Taal | – |
 | `language` | Taal van de kaart: `nl` of `en`. Standaard de taal van Home Assistant | automatisch |
 | `show_radiators` | Radiatorcircuit tonen | `true` |
 | `show_floor` | Vloerverwarming begane grond tonen | `true` |
@@ -170,6 +171,25 @@ cards:
 ## Taal
 
 De kaart gebruikt automatisch de taal van je Home Assistant, ook voor de getalnotatie (komma of punt). Er zijn **Nederlands** en **Engels**; elke andere taal valt terug op Engels. Wil je een andere taal dan Home Assistant gebruikt, zet dan `language: nl` of `language: en`. De namen van de modi (zoals Heat only) komen uit je eigen select; stel ze in met `mode_heat` en `mode_cool`.
+
+### Eigen teksten
+
+Met `labels` pas je elke tekst op de kaart aan, bijvoorbeeld de namen van de circuits of de knoppen. Je hoeft alleen op te geven wat je wilt veranderen:
+
+```yaml
+type: custom:panasonic-monoblock-card
+labels:
+  radBed: Slaapkamers
+  bath: Badkamer
+  heating: Warm
+  cooling: Koel
+  on: Aan
+  off: Uit
+  modes:
+    heat: Verwarmen
+```
+
+Beschikbare sleutels: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. De namen van de modi pas je aan onder `modes`.
 
 Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `en`-blok in de `TR`-tabel bovenin, geef het de taalcode (bijvoorbeeld `de`) en vertaal de teksten. Pull requests zijn welkom.
 

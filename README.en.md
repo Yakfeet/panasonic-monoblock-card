@@ -78,6 +78,7 @@ entities:
 | Option | Description | Default |
 | --- | --- | --- |
 | `title` | Card title | by language (`Warmtepomp` / `Heat pump`) |
+| `labels` | Your own texts for the card and the buttons, see Language | – |
 | `language` | Card language: `nl` or `en`. Defaults to the Home Assistant language | automatic |
 | `show_radiators` | Show the radiator circuit | `true` |
 | `show_floor` | Show underfloor heating, ground floor | `true` |
@@ -170,6 +171,25 @@ cards:
 ## Language
 
 The card automatically uses the language of your Home Assistant, including the number format (comma or point). **Dutch** and **English** are available; any other language falls back to English. To use a different language than Home Assistant, set `language: nl` or `language: en`. The names of the modes (such as Heat only) come from your own select; set them with `mode_heat` and `mode_cool`.
+
+### Custom texts
+
+With `labels` you change any text on the card, for example the circuit names or the buttons. You only need to give what you want to change:
+
+```yaml
+type: custom:panasonic-monoblock-card
+labels:
+  radBed: Bedrooms
+  bath: Bathroom
+  heating: Warm
+  cooling: Cool
+  on: On
+  off: Off
+  modes:
+    heat: Heating
+```
+
+Available keys: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. Change the mode names under `modes`.
 
 You can add a language in `dist/panasonic-monoblock-card.js`: copy the `en` block in the `TR` table at the top, give it the language code (for example `de`) and translate the texts. Pull requests are welcome.
 
