@@ -94,7 +94,18 @@ class WPBase extends HTMLElement {
   _shell(title, pill, body) {
     this.shadowRoot.innerHTML = `
     <style>
-      ha-card{display:block;padding:16px;overflow:hidden}
+      ha-card{display:block;padding:16px;overflow:hidden;container-type:inline-size}
+      .wrap{display:block}
+      .wrap.horizontal{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(250px,1fr);gap:20px;align-items:start}
+      @container (min-width:920px){.wrap.auto{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(250px,1fr);gap:20px;align-items:start}}
+      .wrap.horizontal .chips{margin-top:0}
+      .svg-nog,.gar-side{display:none}
+      .wrap.horizontal .svg-full{display:none}
+      .wrap.horizontal .svg-nog,.wrap.horizontal .gar-side{display:block}
+      @container (min-width:920px){.wrap.auto .svg-full{display:none}.wrap.auto .svg-nog,.wrap.auto .gar-side{display:block}}
+      .gar-side,.gar-show{margin-top:12px;background:var(--secondary-background-color);border-radius:12px;padding:10px 12px}
+      .gar-side svg,.gar-show svg{max-width:340px;margin:0 auto}
+      @container (min-width:920px){.wrap.auto .chips{margin-top:0}}
       .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
       .title{font-size:1.1rem;font-weight:600;color:var(--primary-text-color)}
       .pill{font-size:.82rem;padding:6px 14px;border-radius:999px;background:rgba(255,120,40,.16);color:#ff9a55;white-space:nowrap}
@@ -126,6 +137,7 @@ class WPBase extends HTMLElement {
       .air{stroke-dasharray:5 5;animation:air 1s linear infinite}
       .haze{animation:rise 2s ease-in-out infinite}
       .glow{animation:glow 1.4s ease-in-out infinite}
+      .sm{fill:var(--primary-text-color);font-size:12px;font-weight:600}
       @keyframes rflow{to{stroke-dashoffset:-38}}
       .rf{stroke-dasharray:3 35;stroke-linecap:round;animation:rflow 1.6s linear infinite}
       svg.rev .flow,svg.rev .air{animation-direction:reverse}
@@ -143,7 +155,7 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: 'Warmtepomp', show_radiators: true, show_floor: true, reverse_flow: false }; }
+  static defaults() { return { title: 'Warmtepomp', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
@@ -165,15 +177,46 @@ class PanasonicMonoblockCard extends WPBase {
     else if (isNum(flow)) running = flow > 1;
     const circ = running || (isNum(flow) && flow > 1);
     const defrost = this._on('defrost'), fault = this._fault();
-    const showR = c.show_radiators !== false, showF = c.show_floor !== false;
-    const radOn = showR && circ && (this._has('radiator_pump') ? this._on('radiator_pump') : true);
-    const floorOn = showF && circ && (this._has('floor_pump') ? this._on('floor_pump') : true);
-
     const supC = tempColor(sup, 20, 55), retC = tempColor(ret, 20, 55);
     const avgC = tempColor(isNum(sup) && isNum(ret) ? sup * 0.7 + ret * 0.3 : null, 20, 55);
     const fd = isNum(flow) ? clamp(2.4 - flow * 0.1, 0.7, 2.4) : 1.4;
     const fanDur = isNum(fanRpm) && fanRpm > 0 ? clamp(2.2 - fanRpm / 300, 0.45, 2) : isNum(fanHz) && fanHz > 0 ? clamp(2 - fanHz / 40, 0.45, 2) : 1.1;
     const fanOn = running && (isNum(fanRpm) ? fanRpm > 0 : true);
+    const hasV = (k) => this._has(k + '_supply') || this._has(k + '_return');
+    const vals = (k) => `Aanvoer <tspan class="sm" data-e="${k}_supply">${fmt(this._n(k + '_supply'), 1, ' °C')}</tspan>`;
+    const valr = (k) => `Retour <tspan class="sm" data-e="${k}_return">${fmt(this._n(k + '_return'), 1, ' °C')}</tspan>`;
+    const tag2 = (x, y, name, k) => `<text x="${x}" y="${y}" class="lbl">${name}</text>` + (hasV(k) ? `<text x="${x}" y="${y + 15}" class="lbl">${vals(k)}</text><text x="${x}" y="${y + 29}" class="lbl">${valr(k)}</text>` : '');
+    /* lus van een verdeler: vier banen, de verdeler staat rechts */
+    const loopPath = (y0, xv = 584, xL = xv - 72) => `M${xv} ${y0} H${xL} C${xL - 12} ${y0} ${xL - 12} ${y0 + 14} ${xL} ${y0 + 14} H${xv - 28} C${xv - 12} ${y0 + 14} ${xv - 12} ${y0 + 28} ${xv - 28} ${y0 + 28} H${xL} C${xL - 12} ${y0 + 28} ${xL - 12} ${y0 + 42} ${xL} ${y0 + 42} H${xv}`;
+    const loopBox = (x, y, lines) => `<rect x="${x}" y="${y}" width="36" height="76" rx="6" style="fill:var(--card-background-color)" stroke="#c3c8ce" stroke-width="2.5"/>${lines.map((l) => `<line x1="${x + 6}" y1="${l}" x2="${x + 30}" y2="${l}" stroke="rgba(150,150,150,.6)"/>`).join('')}`;
+    /* garage als losse blok: bij een liggend scherm staat dat onder de waarden, bij een losse detailkaart eronder */
+    const garOpt = c.show_garage;
+    const garShown = garOpt === true || garOpt === 'true' || (garOpt !== false && garOpt !== 'false' && (this._has('garage_supply') || this._has('garage_return')));
+    const garPanel = () => {
+      if (!garShown) return '';
+      const S = isNum(this._n('garage_supply')) ? this._n('garage_supply') : sup, R = isNum(this._n('garage_return')) ? this._n('garage_return') : ret;
+      const cs = tempColor(S, 20, 55), cr = tempColor(R, 20, 55), ca = tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, 20, 55);
+      return `<svg viewBox="0 0 340 146" class="${c.reverse_flow ? 'rev' : ''}">
+        ${this._pipe('M318 8 V40', cs, circ, 6, fd)}
+        ${this._pipe(loopPath(54, 300, 228), ca, circ, 6, fd)}
+        ${this._pipe('M318 116 V140', cr, circ, 6, fd)}
+        ${loopBox(300, 40, [54, 68, 82, 96])}
+        ${tag2(0, 66, 'Vloerverwarming garage', 'garage')}
+      </svg>`;
+    };
+
+    /* build(withGarage, u): de tekening; twee keer gebouwd, met en zonder garage (bij een liggend scherm staat de garage onder de waarden) */
+    const build = (withGarage, u) => {
+    const showR = c.show_radiators !== false, showF = c.show_floor !== false;
+    const autoShow = (opt, k) => (opt === true || opt === 'true') || (opt !== false && opt !== 'false' && (this._has(k + '_supply') || this._has(k + '_return')));
+    const showB = autoShow(c.show_bathroom, 'bath'), showG = withGarage && autoShow(c.show_garage, 'garage'), showRg = autoShow(c.show_radiators_ground, 'rad_ground');
+    const hasG = showF || showRg; /* circuits op de begane grond */
+    const gy = 440; /* hoogte van de aanvoerleiding naar de garage */
+    const yB = showG ? gy + 120 : hasG ? 436 : 340; /* onderste retourleiding */
+    const radOn = showR && circ && (this._has('radiator_pump') ? this._on('radiator_pump') : true);
+    const floorOn = showF && circ && (this._has('floor_pump') ? this._on('floor_pump') : true);
+    const bathOn = showB && circ, garOn = showG && circ, radGOn = showRg && circ;
+
 
     // gegevens in het buitenpaneel
     const topItems = [
@@ -192,20 +235,39 @@ class PanasonicMonoblockCard extends WPBase {
       ['setpoint', 'Doel aanvoer', fmt(this._n('setpoint'), 1, ' °C')],
     ].filter((i) => i && this._has(i[0]));
     const cols = [22, 116, 210];
-    const GY = 308;
-    const H = Math.max(420, GY + Math.ceil(gridItems.length / 3) * 44 + 8);
+    const GY = 316;
+    const H = Math.max(yB + 24, GY + Math.ceil(gridItems.length / 3) * 44 + 8);
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
+    const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
+    const nearSvg = `<rect x="14" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, 20, 55) : GREY}"/><text x="22" y="272" class="lbl">Aanvoer</text><text x="22" y="289" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
+      <rect x="94" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, 20, 55) : GREY}"/><text x="102" y="272" class="lbl">Retour</text><text x="102" y="289" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
+      <text x="182" y="272" class="lbl">ΔT</text><text x="182" y="289" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dTv, 1, ' K')}</text>`;
     const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${GY + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${GY + 17 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
 
-    /* Waterleidingen, getekend in stroomrichting.
-       Aanvoer: warmtepomp -> huis.  Retour: huis -> warmtepomp. */
-    const supMain = 'M262 270 H601 V290';              // aanvoer naar verdeler vloerverwarming
-    const supRiser = 'M320 270 V84 H428';              // aanvoer naar radiatoren
-    const retRad = 'M562 118 H632 V392 H296 V296 H262'; // retour radiatoren -> warmtepomp
-    const floorOut = 'M584 300 H382 C366 300 366 318 382 318 H556 C572 318 572 336 556 336 H382 C366 336 366 354 382 354 H584'; // verdeler -> lus -> verdeler
-    const floorRet = 'M601 372 V392 H632';             // verdeler -> retourleiding
-    const fins = Array.from({ length: 10 }, (_, i) => `<rect x="${432 + i * 13.2}" y="76" width="9" height="48" rx="3" fill="${radOn ? avgC : GREY}" fill-opacity="${radOn ? 1 : 0.5}"/>`).join('');
-    const haze = (x, y, d) => `<path class="haze" style="animation-delay:${d}s" d="M${x} ${y} q5 -6 0 -12 t0 -12" fill="none" stroke="${avgC}" stroke-width="2" stroke-linecap="round"/>`;
+    /* Waterleidingen, getekend in stroomrichting (huiscoördinaten, die later 60 naar rechts schuiven).
+       Aanvoer: warmtepomp -> huis.  Retour: huis -> warmtepomp.  Elk circuit krijgt zijn eigen kleur uit zijn eigen sensoren. */
+    const bc = (k) => {
+      const S = isNum(this._n(k + '_supply')) ? this._n(k + '_supply') : sup, R = isNum(this._n(k + '_return')) ? this._n(k + '_return') : ret;
+      return { s: tempColor(S, 20, 55), r: tempColor(R, 20, 55), a: tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, 20, 55) };
+    };
+    const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground');
+    const xR = 350, xB = 602; /* xB: midden van de verdeler van de badkamer */
+    const supTrunk = 'M262 270 H312';
+    const supUp = showR || showB ? `M312 270 V44 H${showB ? xB : xR}` : '';
+    const supRad = showR ? `M${xR} 44 V70` : '', supBath = showB ? `M${xB} 44 V70` : '';
+    const supGBus = hasG ? `M312 270 H${showF ? 602 : 350}` : '';
+    const supFloor = showF ? 'M602 270 V282' : '', supRg = showRg ? 'M350 270 V286' : '';
+    const xs = hasG ? 326 : 312;
+    const supGarBus = showG ? `M${xs} 270 V${gy} H602` : '', supGar = showG ? `M602 ${gy} V${gy + 14}` : '';
+    const retRadDrop = showR ? `M${xR} 124 V152` : '', retBathDrop = showB ? `M${xB} 146 V152` : '';
+    const retFloorDrop = showF ? 'M602 358 V372' : '', retRgDrop = showRg ? 'M350 340 V372' : '';
+    const retGBus = hasG ? `M${showRg ? 350 : 602} 372 H632` : '';
+    const retMain = `M${showR ? xR : showB ? xB : 632} ${showR || showB ? 152 : hasG ? 372 : Math.min(392, yB)} H632 V${yB} H296 V296 H262`;
+    const bathCoil = loopPath(84), floorOut = loopPath(296), garOut = loopPath(gy + 26);
+    const garRet = `M602 ${gy + 90} V${yB}`;
+    const finsOf = (y, col, on) => Array.from({ length: 7 }, (_, i) => `<rect x="${344 + i * 15.5}" y="${y}" width="10" height="42" rx="3" fill="${on ? col : GREY}" fill-opacity="${on ? 1 : 0.5}"/>`).join('');
+    const fins = finsOf(76, cR.a, radOn), finsG = finsOf(292, cRg.a, radGOn);
+    const haze = (x, y, d) => `<path class="haze" style="animation-delay:${d}s" d="M${x} ${y} q4 -4.5 0 -9 t0 -9" fill="none" stroke="${cF.a}" stroke-width="2" stroke-linecap="round"/>`;
 
     const svg = `
     <svg viewBox="0 0 700 ${H}" class="${c.reverse_flow ? 'rev' : ''}">
@@ -217,9 +279,7 @@ class PanasonicMonoblockCard extends WPBase {
       <text x="22" y="16" class="zone">BUITEN</text>
       <g transform="translate(60 0)">
         <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
-        <rect x="296" y="170" width="344" height="6" fill="rgba(150,150,150,.3)"/>
-        <text x="338" y="18" class="zone">VERDIEPING</text>
-        <text x="338" y="196" class="zone">BEGANE GROND</text>
+        <rect x="296" y="212" width="344" height="6" fill="rgba(150,150,150,.3)"/>
       </g>
       ${topSvg}
 
@@ -277,43 +337,70 @@ class PanasonicMonoblockCard extends WPBase {
         <circle cx="595" cy="120" r="10" fill="${running ? '#3fcf5a' : '#5b6068'}"/>
       </g>
       ${defrost ? `<rect x="30" y="68" width="100" height="20" rx="10" fill="#e8590c"/><text x="80" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">ONTDOOIEN</text>` : ''}
+      ${nearSvg}
       ${gridSvg}
 
       <!-- aansluitingen van de platenwisselaar naar de muur -->
       ${this._pipe('M285 123 V270 H322', supC, circ, 6, fd)}
       ${this._pipe('M322 296 H264 V199', retC, circ, 6, fd)}
 
+      ${this._pump(264, 216, circ)}
+
       <g transform="translate(60 0)">
-      <!-- waterleidingen huis: retour onder, aanvoer erboven -->
-      ${this._pipe(retRad, retC, circ, 6, fd)}
-      ${this._pipe(supMain, supC, circ, 6, fd)}
-      ${showR ? this._pipe(supRiser, supC, radOn, 6, fd) : ''}
-      ${showF ? this._pipe(floorOut, avgC, floorOn, 6, fd) : ''}
-      ${showF ? this._pipe(floorRet, retC, floorOn, 6, fd) : ''}
+      <!-- hoofdleidingen: aanvoer en retour -->
+      ${this._pipe(retMain, retC, circ, 6, fd)}
+      ${this._pipe(supTrunk, supC, circ, 6, fd)}
+      ${supUp ? this._pipe(supUp, supC, radOn || bathOn, 6, fd) : ''}
+      ${supGBus ? this._pipe(supGBus, supC, floorOn || radGOn, 6, fd) : ''}
+      ${supGarBus ? this._pipe(supGarBus, supC, garOn, 6, fd) : ''}
+      ${retGBus ? this._pipe(retGBus, retC, floorOn || radGOn, 6, fd) : ''}
+      ${supRad ? this._pipe(supRad, cR.s, radOn, 6, fd) : ''}
+      ${supBath ? this._pipe(supBath, cB.s, bathOn, 6, fd) : ''}
+      ${supFloor ? this._pipe(supFloor, cF.s, floorOn, 6, fd) : ''}
+      ${supRg ? this._pipe(supRg, cRg.s, radGOn, 6, fd) : ''}
+      ${supGar ? this._pipe(supGar, cG.s, garOn, 6, fd) : ''}
 
-      <!-- radiator -->
+      <!-- verdieping: radiatoren slaapkamers + badkamervloer -->
       ${showR ? `
-        <rect x="424" y="70" width="138" height="60" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${fins}
-        <text x="493" y="150" text-anchor="middle" class="lbl">Radiatoren</text>` : ''}
+        ${this._pipe(retRadDrop, cR.r, radOn, 6, fd)}
+        <rect x="336" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${fins}
+        ${tag2(336, 172, 'Radiatoren slaapkamers', 'rad')}` : ''}
+      ${showB ? `
+        ${this._pipe(bathCoil, cB.a, bathOn, 6, fd)}
+        ${this._pipe(retBathDrop, cB.r, bathOn, 6, fd)}
+        ${loopBox(584, 70, [84, 98, 112, 126])}
+        ${tag2(500, 172, 'Badkamer vloer', 'bath')}` : ''}
 
-      <!-- vloerverwarming + verdeler -->
+      <!-- begane grond: radiator en vloerverwarming -->
+      ${showRg ? `
+        ${this._pipe(retRgDrop, cRg.r, radGOn, 6, fd)}
+        <rect x="336" y="286" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsG}
+        ${tag2(336, 392, 'Radiator begane grond', 'rad_ground')}` : ''}
       ${showF ? `
-        <rect x="584" y="286" width="36" height="86" rx="6" style="fill:var(--card-background-color)" stroke="#c3c8ce" stroke-width="2.5"/>
-        ${[300, 316, 332, 348].map((y) => `<line x1="590" y1="${y}" x2="614" y2="${y}" stroke="rgba(150,150,150,.6)"/>`).join('')}
-        ${floorOn ? haze(420, 296, 0.3) + haze(470, 296, 0.9) + haze(520, 296, 1.5) : ''}
-        <text x="470" y="384" text-anchor="middle" class="lbl">Vloerverwarming</text>
-        <text x="601" y="410" text-anchor="middle" class="lbl">verdeler</text>` : ''}
+        ${this._pipe(floorOut, cF.a, floorOn, 6, fd)}
+        ${this._pipe(retFloorDrop, cF.r, floorOn, 6, fd)}
+        ${loopBox(584, 282, [296, 310, 324, 338])}
+        ${floorOn ? haze(520, 292, 0.3) + haze(545, 292, 0.9) + haze(570, 292, 1.5) : ''}
+        ${tag2(500, 392, 'Vloerverwarming', 'floor')}` : ''}
 
-      ${this._pump(296, 335, circ)}
-      ${showF && this._has('floor_pump') ? this._pump(601, 270, floorOn) : ''}
-      ${showR && this._has('radiator_pump') ? this._pump(320, 130, radOn) : ''}
+      <!-- garage -->
+      ${showG ? `
+        ${this._pipe(garOut, cG.a, garOn, 6, fd)}
+        ${this._pipe(garRet, cG.r, garOn, 6, fd)}
+        ${loopBox(584, gy + 14, [gy + 26, gy + 40, gy + 54, gy + 68])}
+        ${tag2(336, gy + 40, 'Vloerverwarming garage', 'garage')}` : ''}
 
-      <!-- aanvoer / retour -->
-      <text x="430" y="38" class="lbl">Aanvoer</text><text x="430" y="55" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
-      <text x="505" y="38" class="lbl">Retour</text><text x="505" y="55" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
-      <text x="575" y="38" class="lbl">ΔT</text><text x="575" y="55" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dT, 1, ' K')}</text>
+      <text x="338" y="18" class="zone">VERDIEPING</text>
+      <text x="338" y="236" class="zone">BEGANE GROND</text>
+
+      ${showF && this._has('floor_pump') ? this._pump(602, 270, floorOn) : ''}
+      ${showR && this._has('radiator_pump') ? this._pump(312, 150, radOn) : ''}
       </g>
     </svg>`;
+    return { svg, radOn, floorOn, topItems, gridItems, dTv };
+    };
+    const A = build(true, u), B = build(false, u + 'b');
+    const { radOn, floorOn, topItems, gridItems, dTv } = A;
 
     const modeS = this._st('mode');
     const modeLabel = modeS ? modeText(modeS.state) : '';
@@ -347,11 +434,34 @@ class PanasonicMonoblockCard extends WPBase {
     else if (running) pill = { text: `${modeLabel || 'Verwarmen'}${isNum(compHz) ? ' · ' + fmt(compHz, 0, ' Hz') : ''}` };
     else pill = { text: 'Stand-by', cls: 'idle' };
 
-    this._shell(c.title, pill, svg + `<div class="chips">${chips}</div><div class="stats">${stats}</div>`);
+    /* view: full = tekening + details | drawing = alleen tekening | details = alleen chips en waarden
+       layout (bij view full): auto = naast elkaar zodra de kaart breed genoeg is | vertical | horizontal */
+    const view = c.view === 'drawing' || c.view === 'details' ? c.view : 'full';
+    const layout = c.layout === 'vertical' || c.layout === 'horizontal' ? c.layout : 'auto';
+    /* in de losse detailkaart ontbreken de waarden die anders in de tekening staan, die komen dan als tegels */
+    const dTiles = view === 'details' ? [
+      this._stat('Aanvoer', fmt(sup, 1, ' °C'), 'supply'), this._stat('Retour', fmt(ret, 1, ' °C'), 'return'),
+      this._stat('ΔT', fmt(dTv, 1, ' K'), this._has('delta') ? 'delta' : ''),
+      ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
+    ].join('') : '';
+    const info = `<div class="chips">${chips}</div><div class="stats">${dTiles}${stats}</div>`;
+    const gp = garPanel();
+    const body = view === 'drawing' ? B.svg
+      : view === 'details' ? info + (gp ? `<div class="gar-show">${gp}</div>` : '')
+      : `<div class="wrap ${layout}"><div class="draw"><div class="svg-full">${A.svg}</div><div class="svg-nog">${B.svg}</div></div><div class="info">${info}${gp ? `<div class="gar-side">${gp}</div>` : ''}</div></div>`;
+    this._shell(c.title, pill, body);
   }
 }
 
 
+/* Losse kaart met alleen de details (chips en waarden), voor bijvoorbeeld een liggend scherm */
+class PanasonicMonoblockDetailsCard extends PanasonicMonoblockCard {
+  static defaults() { return { ...PanasonicMonoblockCard.defaults(), view: 'details' }; }
+  getCardSize() { return 4; }
+}
+
 customElements.define('panasonic-monoblock-card', PanasonicMonoblockCard);
+customElements.define('panasonic-monoblock-details-card', PanasonicMonoblockDetailsCard);
 window.customCards = window.customCards || [];
 window.customCards.push({ type: 'panasonic-monoblock-card', name: 'Panasonic monoblock', description: 'Geanimeerde kaart voor een Panasonic monoblock zonder buffervat', preview: false });
+window.customCards.push({ type: 'panasonic-monoblock-details-card', name: 'Panasonic monoblock (details)', description: 'Alleen de details van de Panasonic monoblock: status en waarden', preview: false });
