@@ -446,7 +446,7 @@ class PanasonicMonoblockCard extends WPBase {
     ].join('') : '';
     const info = `<div class="chips">${chips}</div><div class="stats">${dTiles}${stats}</div>`;
     const gp = garPanel();
-    const body = view === 'drawing' ? B.svg
+    const body = view === 'drawing' ? (c.show_garage === true || c.show_garage === 'true' ? A.svg : B.svg)
       : view === 'details' ? info + (gp ? `<div class="gar-show">${gp}</div>` : '')
       : `<div class="wrap ${layout}"><div class="draw"><div class="svg-full">${A.svg}</div><div class="svg-nog">${B.svg}</div></div><div class="info">${info}${gp ? `<div class="gar-side">${gp}</div>` : ''}</div></div>`;
     this._shell(c.title, pill, body);
