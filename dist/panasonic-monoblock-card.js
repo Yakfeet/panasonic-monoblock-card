@@ -9,8 +9,9 @@
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const isNum = (v) => v !== null && v !== undefined && !isNaN(v);
+let NUM_LOCALE = 'nl-NL'; /* wordt bij elke render gezet op de taal van Home Assistant (of `language`) */
 const fmt = (v, d = 1, u = '') =>
-  isNum(v) ? Number(v).toLocaleString('nl-NL', { minimumFractionDigits: d, maximumFractionDigits: d }) + u : '–';
+  isNum(v) ? Number(v).toLocaleString(NUM_LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d }) + u : '–';
 const fmtP = (w) => (!isNum(w) ? '–' : Math.abs(w) >= 1000 ? fmt(w / 1000, 2, ' kW') : fmt(w, 0, ' W'));
 const fmtMin = (m) => (!isNum(m) ? '–' : m >= 60 ? `${Math.floor(m / 60)} u ${Math.round(m % 60)} min` : `${Math.round(m)} min`);
 const STOPS = [[0, [47, 128, 208]], [0.28, [60, 190, 235]], [0.42, [240, 220, 150]], [0.58, [250, 170, 60]], [0.8, [245, 110, 40]], [1, [225, 50, 40]]];
@@ -28,13 +29,33 @@ const tempColor = (t, lo = 15, hi = 60) => {
 };
 const ON_STATES = ['on', 'true', 'heating', 'heat', 'running', 'active', 'defrosting', 'open', 'online', 'connected'];
 const OK_STATES = ['0', 'off', 'none', 'no fault', 'unknown', 'unavailable', '', 'false', 'ok', 'normal'];
-const MODE_NL = { heat: 'Verwarmen', heating: 'Verwarmen', cool: 'Koelen', cooling: 'Koelen', off: 'Uit', auto: 'Auto', manual: 'Handmatig', eco: 'Eco+', 'eco+': 'Eco+', program: 'Programma', programmed: 'Programma', performance: 'Boost', electric: 'Elektrisch', standard: 'Standaard' };
-const modeText = (v) => (v === null || v === undefined || v === '' ? '' : MODE_NL[String(v).toLowerCase()] || String(v));
+/* ---------- vertalingen: voeg hier een taal toe (zoals `de`) en kopieer de sleutels van `en` ---------- */
+const TR = {
+  nl: {
+    title: 'Warmtepomp', supply: 'Aanvoer', ret: 'Retour', outside: 'BUITEN', first: 'VERDIEPING', ground: 'BEGANE GROND', defrostBadge: 'ONTDOOIEN',
+    ambient: 'Buitenlucht', coil: 'Verdamper', exhaust: 'Persgas', suction: 'Zuiggas', compressor: 'Compressor', fan: 'Ventilator', condensing: 'Condensatie', expValve: 'Exp.ventiel', flow: 'Debiet', target: 'Doel aanvoer',
+    radBed: 'Radiatoren slaapkamers', bath: 'Badkamer vloer', radGround: 'Radiator begane grond', floor: 'Vloerverwarming', garage: 'Garage vloer',
+    chipCirc: 'Circulatie WP', chipRadPump: 'Cv-pomp', chipFloorPump: 'Vloerpomp', defrost: 'Ontdooien', softstart: 'Softstart', online: 'Online', fault: 'Storing',
+    electric: 'Elektrisch', heatOut: 'Warmte-afgifte', copEst: 'COP (geschat)', copCur: 'COP (actueel)', today: 'Vandaag', mode: 'Modus', workMode: 'Werkstand', room: 'Kamer',
+    standby: 'Stand-by', heating: 'Verwarmen', cooling: 'Koelen', on: 'Aan', off: 'Uit',
+    modes: { heat: 'Verwarmen', heating: 'Verwarmen', cool: 'Koelen', cooling: 'Koelen', off: 'Uit', auto: 'Auto', manual: 'Handmatig', eco: 'Eco+', 'eco+': 'Eco+', program: 'Programma', programmed: 'Programma', performance: 'Boost', electric: 'Elektrisch', standard: 'Standaard' },
+  },
+  en: {
+    title: 'Heat pump', supply: 'Supply', ret: 'Return', outside: 'OUTSIDE', first: 'FIRST FLOOR', ground: 'GROUND FLOOR', defrostBadge: 'DEFROSTING',
+    ambient: 'Outdoor air', coil: 'Evaporator', exhaust: 'Discharge gas', suction: 'Suction gas', compressor: 'Compressor', fan: 'Fan', condensing: 'Condensing', expValve: 'Exp. valve', flow: 'Flow', target: 'Target supply',
+    radBed: 'Bedroom radiators', bath: 'Bathroom floor', radGround: 'Ground floor radiator', floor: 'Underfloor heating', garage: 'Garage floor',
+    chipCirc: 'HP circulation', chipRadPump: 'Heating pump', chipFloorPump: 'Floor pump', defrost: 'Defrost', softstart: 'Soft start', online: 'Online', fault: 'Fault',
+    electric: 'Electrical', heatOut: 'Heat output', copEst: 'COP (estimated)', copCur: 'COP (current)', today: 'Today', mode: 'Mode', workMode: 'Work mode', room: 'Room',
+    standby: 'Standby', heating: 'Heating', cooling: 'Cooling', on: 'On', off: 'Off',
+    modes: { heat: 'Heating', heating: 'Heating', cool: 'Cooling', cooling: 'Cooling', off: 'Off', auto: 'Auto', manual: 'Manual', eco: 'Eco+', 'eco+': 'Eco+', program: 'Program', programmed: 'Program', performance: 'Boost', electric: 'Electric', standard: 'Standard' },
+  },
+};
+const modeText = (v, t) => (v === null || v === undefined || v === '' ? '' : t.modes[String(v).toLowerCase()] || String(v));
 const GREY = '#8b9097';
 
 class WPBase extends HTMLElement {
   setConfig(config) {
-    if (!config) throw new Error('Geen configuratie');
+    if (!config) throw new Error('No configuration');
     this._c = { ...this.constructor.defaults(), ...config, entities: { ...(config.entities || {}) } };
     this._uid = 'u' + Math.random().toString(36).slice(2, 8);
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
@@ -170,12 +191,15 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: 'Warmtepomp', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
+  static defaults() { return { title: '', language: '', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
     if (!this._hass || !this._c) return;
     const c = this._c, u = this._uid;
+    const lang = String(c.language || (this._hass.locale && this._hass.locale.language) || this._hass.language || 'en').toLowerCase().slice(0, 2);
+    const t = TR[lang] || TR.en;
+    NUM_LOCALE = c.language ? (lang === 'nl' ? 'nl-NL' : 'en-GB') : (this._hass.locale && this._hass.locale.language) || this._hass.language || (lang === 'nl' ? 'nl-NL' : 'en-GB');
     let tLo = parseFloat(c.temp_min), tHi = parseFloat(c.temp_max); /* kleurschaal van de leidingen */
     if (isNaN(tLo)) tLo = 20; if (isNaN(tHi) || tHi <= tLo) tHi = tLo + 1;
     const sup = this._n('supply'), ret = this._n('return'), flow = this._n('flow'), power = this._n('power');
@@ -200,8 +224,8 @@ class PanasonicMonoblockCard extends WPBase {
     const fanDur = isNum(fanRpm) && fanRpm > 0 ? clamp(2.2 - fanRpm / 300, 0.45, 2) : isNum(fanHz) && fanHz > 0 ? clamp(2 - fanHz / 40, 0.45, 2) : 1.1;
     const fanOn = running && (isNum(fanRpm) ? fanRpm > 0 : true);
     const hasV = (k) => this._has(k + '_supply') || this._has(k + '_return');
-    const vals = (k) => `Aanvoer <tspan class="sm" data-e="${k}_supply">${fmt(this._n(k + '_supply'), 1, ' °C')}</tspan>`;
-    const valr = (k) => `Retour <tspan class="sm" data-e="${k}_return">${fmt(this._n(k + '_return'), 1, ' °C')}</tspan>`;
+    const vals = (k) => `${t.supply} <tspan class="sm" data-e="${k}_supply">${fmt(this._n(k + '_supply'), 1, ' °C')}</tspan>`;
+    const valr = (k) => `${t.ret} <tspan class="sm" data-e="${k}_return">${fmt(this._n(k + '_return'), 1, ' °C')}</tspan>`;
     const vald = (k) => {
       const a = this._n(k + '_supply'), b = this._n(k + '_return');
       return isNum(a) && isNum(b) ? `ΔT <tspan class="sm">${fmt(a - b, 1, ' °C')}</tspan>` : '';
@@ -227,19 +251,19 @@ class PanasonicMonoblockCard extends WPBase {
 
     // gegevens in het buitenpaneel
     const topItems = [
-      ['ambient', 'Buitenlucht', fmt(this._n('ambient'), 1, ' °C')],
-      ['coil', 'Verdamper', fmt(this._n('coil'), 0, ' °C')],
-      ['exhaust', 'Persgas', fmt(this._n('exhaust'), 0, ' °C')],
+      ['ambient', t.ambient, fmt(this._n('ambient'), 1, ' °C')],
+      ['coil', t.coil, fmt(this._n('coil'), 0, ' °C')],
+      ['exhaust', t.exhaust, fmt(this._n('exhaust'), 0, ' °C')],
     ].filter((i) => this._has(i[0]));
     const fanTxt = isNum(fanRpm) ? fmt(fanRpm, 0, ' rpm') : isNum(fanHz) ? fmt(fanHz, 0, ' Hz') : null;
     const gridItems = [
-      ['suction', 'Zuiggas', fmt(this._n('suction'), 0, ' °C')],
-      ['comp_hz', 'Compressor', fmt(compHz, 0, ' Hz')],
-      fanTxt ? [isNum(fanRpm) ? 'fan_rpm' : 'fan_hz', 'Ventilator', fanTxt] : null,
-      ['hp_sat', 'Condensatie', fmt(this._n('hp_sat'), 0, ' °C')],
-      ['eev', 'Exp.ventiel', fmt(this._n('eev'), 0, ' P')],
-      ['flow', 'Debiet', fmt(flow, 1, ' L/min')],
-      ['setpoint', 'Doel aanvoer', fmt(this._n('setpoint'), 1, ' °C')],
+      ['suction', t.suction, fmt(this._n('suction'), 0, ' °C')],
+      ['comp_hz', t.compressor, fmt(compHz, 0, ' Hz')],
+      fanTxt ? [isNum(fanRpm) ? 'fan_rpm' : 'fan_hz', t.fan, fanTxt] : null,
+      ['hp_sat', t.condensing, fmt(this._n('hp_sat'), 0, ' °C')],
+      ['eev', t.expValve, fmt(this._n('eev'), 0, ' P')],
+      ['flow', t.flow, fmt(flow, 1, ' L/min')],
+      ['setpoint', t.target, fmt(this._n('setpoint'), 1, ' °C')],
     ].filter((i) => i && this._has(i[0]));
     const cols = [22, 116, 210];
     const GY = 96;
@@ -247,8 +271,8 @@ class PanasonicMonoblockCard extends WPBase {
     const W = showG ? 860 : 700;
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
     const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
-    const nearSvg = `<rect x="14" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="409" class="lbl">Aanvoer</text><text x="22" y="426" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
-      <rect x="108" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, tLo, tHi) : GREY}"/><text x="116" y="409" class="lbl">Retour</text><text x="116" y="426" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
+    const nearSvg = `<rect x="14" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="409" class="lbl">${t.supply}</text><text x="22" y="426" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
+      <rect x="108" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, tLo, tHi) : GREY}"/><text x="116" y="409" class="lbl">${t.ret}</text><text x="116" y="426" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
       <text x="210" y="409" class="lbl">ΔT</text><text x="210" y="426" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dTv, 1, ' °C')}</text>`;
     const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${GY + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${GY + 17 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
 
@@ -286,7 +310,7 @@ class PanasonicMonoblockCard extends WPBase {
       </defs>
       <!-- buitenpaneel + muur -->
       <rect x="0" y="0" width="322" height="${H}" rx="6" fill="rgba(110,150,210,.10)"/>
-      <text x="22" y="16" class="zone">BUITEN</text>
+      <text x="22" y="16" class="zone">${t.outside}</text>
       <g transform="translate(60 0)">
         <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
         <rect x="296" y="226" width="${showG ? 480 : 344}" height="6" fill="rgba(150,150,150,.3)"/>
@@ -346,7 +370,7 @@ class PanasonicMonoblockCard extends WPBase {
         <rect x="902" y="25" width="78" height="35" rx="9" fill="#1c1d20" stroke="#55595f" stroke-width="4"/>
         <circle cx="595" cy="120" r="10" fill="${running ? '#3fcf5a' : '#5b6068'}"/>
       </g>
-      ${defrost ? `<rect x="30" y="228" width="100" height="20" rx="10" fill="#e8590c"/><text x="80" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">ONTDOOIEN</text>` : ''}
+      ${defrost ? `<rect x="30" y="228" width="100" height="20" rx="10" fill="#e8590c"/><text x="80" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t.defrostBadge}</text>` : ''}
       ${nearSvg}
       ${gridSvg}
 
@@ -374,25 +398,25 @@ class PanasonicMonoblockCard extends WPBase {
       ${showR ? `
         ${this._pipe(retRadDrop, cR.r, radOn, 6, fd)}
         <rect x="336" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${fins}
-        ${tag2(336, 172, 'Radiatoren slaapkamers', 'rad')}` : ''}
+        ${tag2(336, 172, t.radBed, 'rad')}` : ''}
       ${showB ? `
         ${this._pipe(bathCoil, cB.a, bathOn, 6, fd)}
         ${this._pipe(retBathDrop, cB.r, bathOn, 6, fd)}
         ${bathOn ? hz(512, 84, cB.a) : ''}
         ${loopBox(584, 70, [84, 98, 112, 126])}
-        ${tag2(500, 172, 'Badkamer vloer', 'bath')}` : ''}
+        ${tag2(500, 172, t.bath, 'bath')}` : ''}
 
       <!-- begane grond: radiator en vloerverwarming -->
       ${showRg ? `
         ${this._pipe(retRgDrop, cRg.r, radGOn, 6, fd)}
         <rect x="336" y="286" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsG}
-        ${tag2(336, 392, 'Radiator begane grond', 'rad_ground')}` : ''}
+        ${tag2(336, 392, t.radGround, 'rad_ground')}` : ''}
       ${showF ? `
         ${this._pipe(floorOut, cF.a, floorOn, 6, fd)}
         ${this._pipe(retFloorDrop, cF.r, floorOn, 6, fd)}
         ${loopBox(584, 282, [296, 310, 324, 338])}
         ${floorOn ? haze(520, 292, 0.3) + haze(545, 292, 0.9) + haze(570, 292, 1.5) : ''}
-        ${tag2(500, 392, 'Vloerverwarming', 'floor')}` : ''}
+        ${tag2(500, 392, t.floor, 'floor')}` : ''}
 
       <!-- garage -->
       ${showG ? `
@@ -400,10 +424,10 @@ class PanasonicMonoblockCard extends WPBase {
         ${this._pipe(garRet, cG.r, garOn, 6, fd)}
         ${garOn ? hz(gx - 72, 296, cG.a) : ''}
         ${loopBox(gx, 282, [296, 310, 324, 338])}
-        ${tag2(gx - 84, 392, 'Garage vloer', 'garage')}` : ''}
+        ${tag2(gx - 84, 392, t.garage, 'garage')}` : ''}
 
-      <text x="338" y="18" class="zone">VERDIEPING</text>
-      <text x="338" y="248" class="zone">BEGANE GROND</text>
+      <text x="338" y="18" class="zone">${t.first}</text>
+      <text x="338" y="248" class="zone">${t.ground}</text>
 
       ${showF && this._has('floor_pump') ? this._pump(602, 270, floorOn) : ''}
       ${showR && this._has('radiator_pump') ? this._pump(312, 150, radOn) : ''}
@@ -415,36 +439,36 @@ class PanasonicMonoblockCard extends WPBase {
     const { radOn, floorOn, topItems, gridItems, dTv } = A;
 
     const modeS = this._st('mode');
-    const modeLabel = modeS ? modeText(modeS.state) : '';
+    const modeLabel = modeS ? modeText(modeS.state, t) : '';
     const chips = [
-      this._chip('Compressor', running, 'compressor'),
-      this._chip('Ventilator', fanOn),
-      this._chip('Circulatie WP', circ, 'flow'),
-      this._has('radiator_pump') ? this._chip('Cv-pomp', radOn, 'radiator_pump') : '',
-      this._has('floor_pump') ? this._chip('Vloerpomp', floorOn, 'floor_pump') : '',
-      this._has('defrost') ? this._chip('Ontdooien', defrost, 'defrost') : '',
-      this._has('softstart') ? this._chip('Softstart', this._on('softstart'), 'softstart') : '',
-      this._has('online') ? this._chip('Online', this._on('online'), 'online') : '',
-      this._has('fault') ? this._chip('Storing', fault, 'fault') : '',
+      this._chip(t.compressor, running, 'compressor'),
+      this._chip(t.fan, fanOn),
+      this._chip(t.chipCirc, circ, 'flow'),
+      this._has('radiator_pump') ? this._chip(t.chipRadPump, radOn, 'radiator_pump') : '',
+      this._has('floor_pump') ? this._chip(t.chipFloorPump, floorOn, 'floor_pump') : '',
+      this._has('defrost') ? this._chip(t.defrost, defrost, 'defrost') : '',
+      this._has('softstart') ? this._chip(t.softstart, this._on('softstart'), 'softstart') : '',
+      this._has('online') ? this._chip(t.online, this._on('online'), 'online') : '',
+      this._has('fault') ? this._chip(t.fault, fault, 'fault') : '',
     ].join('');
 
     const thermo = this._has('thermostat') ? parseFloat(this._attr('thermostat', 'current_temperature')) : null;
     const wm = this._st('work_mode');
     const stats = [
-      this._stat('Elektrisch', fmtP(power), 'power'),
-      this._stat('Warmte-afgifte', fmtP(heat), this._has('heat_power') ? 'heat_power' : ''),
-      this._stat(copEstimated ? 'COP (geschat)' : 'COP (actueel)', fmt(cop, 1), 'cop'),
-      this._has('energy_today') ? this._stat('Vandaag', fmt(this._n('energy_today'), 2, ' kWh'), 'energy_today') : '',
-      modeLabel ? this._stat('Modus', modeLabel, 'mode') : '',
-      wm ? this._stat('Werkstand', wm.state, 'work_mode') : '',
-      isNum(thermo) ? this._stat('Kamer', fmt(thermo, 1, ' °C'), 'thermostat') : '',
+      this._stat(t.electric, fmtP(power), 'power'),
+      this._stat(t.heatOut, fmtP(heat), this._has('heat_power') ? 'heat_power' : ''),
+      this._stat(copEstimated ? t.copEst : t.copCur, fmt(cop, 1), 'cop'),
+      this._has('energy_today') ? this._stat(t.today, fmt(this._n('energy_today'), 2, ' kWh'), 'energy_today') : '',
+      modeLabel ? this._stat(t.mode, modeLabel, 'mode') : '',
+      wm ? this._stat(t.workMode, wm.state, 'work_mode') : '',
+      isNum(thermo) ? this._stat(t.room, fmt(thermo, 1, ' °C'), 'thermostat') : '',
     ].join('');
 
     let pill;
-    if (fault) pill = { text: 'Storing', cls: 'fault' };
-    else if (defrost) pill = { text: 'Ontdooien' };
-    else if (running) pill = { text: `${modeLabel || 'Verwarmen'}${isNum(compHz) ? ' · ' + fmt(compHz, 0, ' Hz') : ''}` };
-    else pill = { text: 'Stand-by', cls: 'idle' };
+    if (fault) pill = { text: t.fault, cls: 'fault' };
+    else if (defrost) pill = { text: t.defrost };
+    else if (running) pill = { text: `${modeLabel || t.heating}${isNum(compHz) ? ' · ' + fmt(compHz, 0, ' Hz') : ''}` };
+    else pill = { text: t.standby, cls: 'idle' };
 
     /* view: full = tekening + details | drawing = alleen tekening | details = alleen chips en waarden
        layout (bij view full): auto = naast elkaar zodra de kaart breed genoeg is | vertical | horizontal */
@@ -452,7 +476,7 @@ class PanasonicMonoblockCard extends WPBase {
     const layout = c.layout === 'vertical' || c.layout === 'horizontal' ? c.layout : 'auto';
     /* in de losse detailkaart ontbreken de waarden die anders in de tekening staan, die komen dan als tegels */
     const dTiles = view === 'details' ? [
-      this._stat('Aanvoer', fmt(sup, 1, ' °C'), 'supply'), this._stat('Retour', fmt(ret, 1, ' °C'), 'return'),
+      this._stat(t.supply, fmt(sup, 1, ' °C'), 'supply'), this._stat(t.ret, fmt(ret, 1, ' °C'), 'return'),
       this._stat('ΔT', fmt(dTv, 1, ' °C'), this._has('delta') ? 'delta' : ''),
       ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
     ].join('') : '';
@@ -464,11 +488,11 @@ class PanasonicMonoblockCard extends WPBase {
     let ctrl = '';
     if (c.show_controls !== false && view !== 'drawing') {
       const btns = [];
-      if (this._has('power_switch')) btns.push(`<button class="btn pw ${this._on('power_switch') ? 'on' : ''}" data-act="power" data-k="power_switch">${ICON.power}${this._on('power_switch') ? 'Aan' : 'Uit'}</button>`);
+      if (this._has('power_switch')) btns.push(`<button class="btn pw ${this._on('power_switch') ? 'on' : ''}" data-act="power" data-k="power_switch">${ICON.power}${this._on('power_switch') ? t.on : t.off}</button>`);
       if (this._has('operating_mode')) {
         const cur = this._st('operating_mode').state;
-        btns.push(`<button class="btn heat ${eq(cur, c.mode_heat) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_heat}">${ICON.heat}Verwarmen</button>`);
-        btns.push(`<button class="btn cool ${eq(cur, c.mode_cool) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_cool}">${ICON.cool}Koelen</button>`);
+        btns.push(`<button class="btn heat ${eq(cur, c.mode_heat) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_heat}">${ICON.heat}${t.heating}</button>`);
+        btns.push(`<button class="btn cool ${eq(cur, c.mode_cool) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_cool}">${ICON.cool}${t.cooling}</button>`);
       }
       if (btns.length) ctrl = `<div class="ctrl">${btns.join('')}</div>`;
     }
@@ -476,7 +500,7 @@ class PanasonicMonoblockCard extends WPBase {
     const body = view === 'drawing' ? A.svg
       : view === 'details' ? info
       : `<div class="wrap ${layout}"><div class="draw">${A.svg}</div><div class="info">${info}</div></div>`;
-    this._shell(c.title, pill, body);
+    this._shell(c.title || t.title, pill, body);
     this._wireActions();
   }
 }
@@ -491,5 +515,5 @@ class PanasonicMonoblockDetailsCard extends PanasonicMonoblockCard {
 customElements.define('panasonic-monoblock-card', PanasonicMonoblockCard);
 customElements.define('panasonic-monoblock-details-card', PanasonicMonoblockDetailsCard);
 window.customCards = window.customCards || [];
-window.customCards.push({ type: 'panasonic-monoblock-card', name: 'Panasonic monoblock', description: 'Geanimeerde kaart voor een Panasonic monoblock zonder buffervat', preview: false });
-window.customCards.push({ type: 'panasonic-monoblock-details-card', name: 'Panasonic monoblock (details)', description: 'Alleen de details van de Panasonic monoblock: status en waarden', preview: false });
+window.customCards.push({ type: 'panasonic-monoblock-card', name: 'Panasonic monoblock', description: 'Animated card for a Panasonic monoblock heat pump without buffer tank', preview: false });
+window.customCards.push({ type: 'panasonic-monoblock-details-card', name: 'Panasonic monoblock (details)', description: 'Only the details of the Panasonic monoblock: status and values', preview: false });
