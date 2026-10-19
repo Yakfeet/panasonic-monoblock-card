@@ -149,7 +149,7 @@ cards:
 
 `panasonic-monoblock-details-card` is simply a card with `view: details`. The details card also shows the values that are otherwise in the drawing (supply, return, ΔT, outdoor air, compressor, fan and flow) as tiles. The per-circuit temperatures are only in the drawing, except those of the garage.
 
-**The garage moves along.** In a landscape layout (so also with `layout: auto` on a wide screen) the garage appears as a separate block on the right, under the values. With `view: drawing` the garage is not in the drawing but in the details card (`view: details`), so in a split setup it appears only once. If you only need the drawing, set `show_garage: false`.
+**The garage moves along.** In a landscape layout (so also with `layout: auto` on a wide screen) the garage appears as a separate block on the right, under the values. With `view: drawing` the garage is by default not in the drawing but in the details card (`view: details`), so in a split setup it appears only once. If you would rather have it in the drawing, set `show_garage: true` on the drawing card and `show_garage: false` on the details card.
 
 ---
 

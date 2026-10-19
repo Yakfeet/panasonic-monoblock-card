@@ -149,7 +149,7 @@ cards:
 
 `panasonic-monoblock-details-card` is gewoon een kaart met `view: details`. In de detailkaart staan ook de waarden die anders in de tekening staan (aanvoer, retour, ΔT, buitenlucht, compressor, ventilator en debiet) als tegels. De temperaturen per circuit staan alleen in de tekening, behalve die van de garage.
 
-**De garage verhuist mee.** Bij een liggende weergave (en dus ook bij `layout: auto` op een breed scherm) staat de garage als los blok rechts, onder de waarden. Bij `view: drawing` staat de garage niet in de tekening, maar in de detailkaart (`view: details`), zodat hij bij een gesplitste opstelling maar één keer voorkomt. Heb je alleen de tekening nodig, zet dan `show_garage: false`.
+**De garage verhuist mee.** Bij een liggende weergave (en dus ook bij `layout: auto` op een breed scherm) staat de garage als los blok rechts, onder de waarden. Bij `view: drawing` staat de garage standaard niet in de tekening, maar in de detailkaart (`view: details`), zodat hij bij een gesplitste opstelling maar één keer voorkomt. Wil je hem liever in de tekening hebben, zet dan `show_garage: true` bij de tekeningkaart en `show_garage: false` bij de detailkaart.
 
 ---
 
