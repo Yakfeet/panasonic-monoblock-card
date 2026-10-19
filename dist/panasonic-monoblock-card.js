@@ -191,14 +191,16 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: '', language: '', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
+  static defaults() { return { title: '', language: '', labels: {}, show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
     if (!this._hass || !this._c) return;
     const c = this._c, u = this._uid;
     const lang = String(c.language || (this._hass.locale && this._hass.locale.language) || this._hass.language || 'en').toLowerCase().slice(0, 2);
-    const t = TR[lang] || TR.en;
+    const base = TR[lang] || TR.en;
+    const lab = c.labels && typeof c.labels === 'object' ? c.labels : {}; /* eigen teksten: `labels:` overschrijft elke sleutel uit de TR-tabel */
+    const t = { ...base, ...lab, modes: { ...base.modes, ...(lab.modes && typeof lab.modes === 'object' ? lab.modes : {}) } };
     NUM_LOCALE = c.language ? (lang === 'nl' ? 'nl-NL' : 'en-GB') : (this._hass.locale && this._hass.locale.language) || this._hass.language || (lang === 'nl' ? 'nl-NL' : 'en-GB');
     let tLo = parseFloat(c.temp_min), tHi = parseFloat(c.temp_max); /* kleurschaal van de leidingen */
     if (isNaN(tLo)) tLo = 20; if (isNaN(tHi) || tHi <= tLo) tHi = tLo + 1;
