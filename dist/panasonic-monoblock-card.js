@@ -155,12 +155,14 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: 'Warmtepomp', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', reverse_flow: false, view: 'full', layout: 'auto' }; }
+  static defaults() { return { title: 'Warmtepomp', show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
     if (!this._hass || !this._c) return;
     const c = this._c, u = this._uid;
+    let tLo = parseFloat(c.temp_min), tHi = parseFloat(c.temp_max); /* kleurschaal van de leidingen */
+    if (isNaN(tLo)) tLo = 20; if (isNaN(tHi) || tHi <= tLo) tHi = tLo + 1;
     const sup = this._n('supply'), ret = this._n('return'), flow = this._n('flow'), power = this._n('power');
     const compHz = this._n('comp_hz'), fanRpm = this._n('fan_rpm'), fanHz = this._n('fan_hz');
     const dT = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
@@ -177,8 +179,8 @@ class PanasonicMonoblockCard extends WPBase {
     else if (isNum(flow)) running = flow > 1;
     const circ = running || (isNum(flow) && flow > 1);
     const defrost = this._on('defrost'), fault = this._fault();
-    const supC = tempColor(sup, 20, 55), retC = tempColor(ret, 20, 55);
-    const avgC = tempColor(isNum(sup) && isNum(ret) ? sup * 0.7 + ret * 0.3 : null, 20, 55);
+    const supC = tempColor(sup, tLo, tHi), retC = tempColor(ret, tLo, tHi);
+    const avgC = tempColor(isNum(sup) && isNum(ret) ? sup * 0.7 + ret * 0.3 : null, tLo, tHi);
     const fd = isNum(flow) ? clamp(2.4 - flow * 0.1, 0.7, 2.4) : 1.4;
     const fanDur = isNum(fanRpm) && fanRpm > 0 ? clamp(2.2 - fanRpm / 300, 0.45, 2) : isNum(fanHz) && fanHz > 0 ? clamp(2 - fanHz / 40, 0.45, 2) : 1.1;
     const fanOn = running && (isNum(fanRpm) ? fanRpm > 0 : true);
@@ -195,7 +197,7 @@ class PanasonicMonoblockCard extends WPBase {
     const garPanel = () => {
       if (!garShown) return '';
       const S = isNum(this._n('garage_supply')) ? this._n('garage_supply') : sup, R = isNum(this._n('garage_return')) ? this._n('garage_return') : ret;
-      const cs = tempColor(S, 20, 55), cr = tempColor(R, 20, 55), ca = tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, 20, 55);
+      const cs = tempColor(S, tLo, tHi), cr = tempColor(R, tLo, tHi), ca = tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, tLo, tHi);
       return `<svg viewBox="0 0 340 146" class="${c.reverse_flow ? 'rev' : ''}">
         ${this._pipe('M318 8 V40', cs, circ, 6, fd)}
         ${this._pipe(loopPath(54, 300, 228), ca, circ, 6, fd)}
@@ -239,8 +241,8 @@ class PanasonicMonoblockCard extends WPBase {
     const H = Math.max(yB + 24, GY + Math.ceil(gridItems.length / 3) * 44 + 8);
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
     const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
-    const nearSvg = `<rect x="14" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, 20, 55) : GREY}"/><text x="22" y="272" class="lbl">Aanvoer</text><text x="22" y="289" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
-      <rect x="94" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, 20, 55) : GREY}"/><text x="102" y="272" class="lbl">Retour</text><text x="102" y="289" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
+    const nearSvg = `<rect x="14" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="272" class="lbl">Aanvoer</text><text x="22" y="289" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
+      <rect x="94" y="259" width="3" height="31" rx="1.5" fill="${circ ? tempColor(ret, tLo, tHi) : GREY}"/><text x="102" y="272" class="lbl">Retour</text><text x="102" y="289" class="val" data-e="return">${fmt(ret, 1, ' °C')}</text>
       <text x="182" y="272" class="lbl">ΔT</text><text x="182" y="289" class="val" ${this._has('delta') ? 'data-e="delta"' : ''}>${fmt(dTv, 1, ' K')}</text>`;
     const gridSvg = gridItems.map((it, i) => `<text x="${cols[i % 3]}" y="${GY + Math.floor(i / 3) * 44}" class="lbl">${it[1]}</text><text x="${cols[i % 3]}" y="${GY + 17 + Math.floor(i / 3) * 44}" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
 
@@ -248,7 +250,7 @@ class PanasonicMonoblockCard extends WPBase {
        Aanvoer: warmtepomp -> huis.  Retour: huis -> warmtepomp.  Elk circuit krijgt zijn eigen kleur uit zijn eigen sensoren. */
     const bc = (k) => {
       const S = isNum(this._n(k + '_supply')) ? this._n(k + '_supply') : sup, R = isNum(this._n(k + '_return')) ? this._n(k + '_return') : ret;
-      return { s: tempColor(S, 20, 55), r: tempColor(R, 20, 55), a: tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, 20, 55) };
+      return { s: tempColor(S, tLo, tHi), r: tempColor(R, tLo, tHi), a: tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, tLo, tHi) };
     };
     const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground');
     const xR = 350, xB = 602; /* xB: midden van de verdeler van de badkamer */
