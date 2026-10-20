@@ -53,6 +53,21 @@ const TR = {
 const modeText = (v, t) => (v === null || v === undefined || v === '' ? '' : t.modes[String(v).toLowerCase()] || String(v));
 const GREY = '#8b9097';
 
+/* Past de bestaande DOM aan op de nieuwe, in plaats van alles te vervangen: de elementen (en dus de animaties en de scrollpositie van het dashboard) blijven staan. */
+const morph = (a, b) => {
+  const ac = a.childNodes, bc = b.childNodes;
+  for (let i = 0; i < bc.length; i++) {
+    const n = bc[i], o = ac[i];
+    if (!o) { a.appendChild(n.cloneNode(true)); continue; }
+    if (o.nodeType !== n.nodeType || o.nodeName !== n.nodeName) { a.replaceChild(n.cloneNode(true), o); continue; }
+    if (n.nodeType !== 1) { if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue; continue; }
+    for (const at of Array.from(o.attributes)) if (!n.hasAttribute(at.name)) o.removeAttribute(at.name);
+    for (const at of Array.from(n.attributes)) if (o.getAttribute(at.name) !== at.value) o.setAttribute(at.name, at.value);
+    morph(o, n);
+  }
+  while (a.childNodes.length > bc.length) a.removeChild(a.lastChild);
+};
+
 class WPBase extends HTMLElement {
   setConfig(config) {
     if (!config) throw new Error('No configuration');
@@ -81,15 +96,20 @@ class WPBase extends HTMLElement {
     return !isNaN(v) && v > 0;
   }
   _fault() { const s = this._st('fault'); return !!s && !OK_STATES.includes(String(s.state).toLowerCase()); }
+  /* Eén klik-luisteraar voor de hele kaart (event delegation), zodat de elementen bij een update behouden kunnen blijven. */
   _wire() {
-    this.shadowRoot.querySelectorAll('[data-e]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const id = this._c.entities[el.dataset.e];
-        if (id) this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: id } }));
-      });
+    if (this._wired) return;
+    this._wired = true;
+    this.shadowRoot.addEventListener('click', (e) => {
+      const el = e.target && e.target.closest ? e.target.closest('[data-act],[data-sg],[data-e]') : null;
+      if (!el) return;
+      const d = el.dataset;
+      if (d.act) { this._act(el); return; }
+      if (d.sg) { if (this._sgSet) this._sgSet(d.sg); return; }
+      const id = this._c.entities[d.e];
+      if (id) this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: id } }));
     });
   }
-
   /* leiding met bewegende stippen; de stroom loopt van het begin naar het einde van `d` */
   _pipe(d, col, on, w = 6, dur = 1.4) {
     return `<path d="${d}" fill="none" stroke="${on ? col : GREY}" stroke-opacity="${on ? 0.95 : 0.45}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>` +
@@ -110,24 +130,20 @@ class WPBase extends HTMLElement {
     return `<circle cx="${x}" cy="${y}" r="12" style="fill:var(--card-background-color)" stroke="${col}" stroke-width="2.5"/>
       <g class="sp ${on ? 'spin' : ''}" style="transform-origin:${x}px ${y}px;--spin:1s" stroke="${col}" stroke-width="2.5" stroke-linecap="round" fill="none"><path d="M${x} ${y} v-7 M${x} ${y} l6 3.5 M${x} ${y} l-6 3.5"/></g>`;
   }
-  _wireActions() {
-    this.shadowRoot.querySelectorAll('[data-act]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const id = this._c.entities[el.dataset.k];
-        if (!id || !this._hass) return;
-        if (el.dataset.act === 'power') {
-          const on = this._hass.states[id] && this._hass.states[id].state === 'on';
-          this._hass.callService(id.split('.')[0], on ? 'turn_off' : 'turn_on', { entity_id: id });
-        } else if (el.dataset.act === 'mode') {
-          this._hass.callService('select', 'select_option', { entity_id: id, option: el.dataset.opt });
-        }
-      });
-    });
+  _act(el) {
+    const id = this._c.entities[el.dataset.k];
+    if (!id || !this._hass) return;
+    if (el.dataset.act === 'power') {
+      const on = this._hass.states[id] && this._hass.states[id].state === 'on';
+      this._hass.callService(id.split('.')[0], on ? 'turn_off' : 'turn_on', { entity_id: id });
+    } else if (el.dataset.act === 'mode') {
+      this._hass.callService('select', 'select_option', { entity_id: id, option: el.dataset.opt });
+    }
   }
   _chip(label, on, key) { return `<span class="chip ${on ? 'on' : ''}" ${key ? `data-e="${key}"` : ''}><i class="dot"></i>${label}</span>`; }
   _stat(label, value, key) { return `<div class="stat" ${key ? `data-e="${key}"` : ''}><span>${label}</span><b>${value}</b></div>`; }
   _shell(title, pill, body) {
-    this.shadowRoot.innerHTML = `
+    const html = `
     <style>
       ha-card{display:block;padding:16px;overflow:hidden;container-type:inline-size}
       .wrap{display:block}
@@ -183,7 +199,20 @@ class WPBase extends HTMLElement {
       <div class="head"><div class="title">${title}</div>${pill ? `<div class="pill ${pill.cls || ''}">${pill.text}</div>` : ''}</div>
       ${body}
     </ha-card>`;
-    this._wire();
+    /* Niets veranderd (bijvoorbeeld alleen een attribuut): de kaart blijft staan, dan springt het dashboard niet en lopen de animaties door. */
+    if (html === this._html) return false;
+    this._html = html;
+    /* Eerste keer: bouwen. Daarna: de bestaande elementen bijwerken in plaats van vervangen. */
+    if (!this._built) {
+      this.shadowRoot.innerHTML = html;
+      this._built = true;
+      this._wire();
+      return true;
+    }
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    morph(this.shadowRoot, tpl.content);
+    return true;
   }
 }
 
@@ -503,7 +532,6 @@ class PanasonicMonoblockCard extends WPBase {
       : view === 'details' ? info
       : `<div class="wrap ${layout}"><div class="draw">${A.svg}</div><div class="info">${info}</div></div>`;
     this._shell(c.title || t.title, pill, body);
-    this._wireActions();
   }
 }
 
