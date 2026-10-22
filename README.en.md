@@ -116,6 +116,7 @@ entities:
 | `rad_ground_supply` / `rad_ground_return` | Supply and return of the radiator on the ground floor |
 | `bath_supply` / `bath_return` | Supply and return of the bathroom underfloor heating (first floor) |
 | `floor_supply` / `floor_return` | Supply and return of the ground floor underfloor heating manifold |
+| `room_rad` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Room temperature (°C) for that circuit: bedrooms, bathroom, ground floor radiator, ground floor underfloor heating and garage. Optional, shown as the last line under the circuit |
 | `garage_supply` / `garage_return` | Supply and return of the garage underfloor heating manifold |
 | `floor_pump` / `radiator_pump` | Pump switch. If it is off, that circuit turns grey |
 | `power_switch` | Switch (`switch`, `input_boolean`) to turn the heat pump on and off. Shows an On/Off button |

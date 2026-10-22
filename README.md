@@ -116,6 +116,7 @@ entities:
 | `rad_ground_supply` / `rad_ground_return` | Aanvoer en retour van de radiator op de begane grond |
 | `bath_supply` / `bath_return` | Aanvoer en retour van de vloerverwarming in de badkamer (verdieping) |
 | `floor_supply` / `floor_return` | Aanvoer en retour van de verdeler van de vloerverwarming op de begane grond |
+| `room_rad` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Ruimtetemperatuur (°C) bij het betreffende circuit: slaapkamers, badkamer, woonkamer (radiator), woonkamer (vloer) en garage. Optioneel, wordt als laatste regel onder het circuit getoond |
 | `garage_supply` / `garage_return` | Aanvoer en retour van de vloerverwarmingsverdeler in de garage |
 | `floor_pump` / `radiator_pump` | Schakelaar van de pomp. Staat die uit, dan wordt het circuit grijs |
 | `power_switch` | Schakelaar (`switch`, `input_boolean`) om de warmtepomp aan en uit te zetten. Toont een Aan/Uit-knop |
