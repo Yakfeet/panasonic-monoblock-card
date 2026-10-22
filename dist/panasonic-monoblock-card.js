@@ -255,13 +255,21 @@ class PanasonicMonoblockCard extends WPBase {
     const fanDur = isNum(fanRpm) && fanRpm > 0 ? clamp(2.2 - fanRpm / 300, 0.45, 2) : isNum(fanHz) && fanHz > 0 ? clamp(2 - fanHz / 40, 0.45, 2) : 1.1;
     const fanOn = running && (isNum(fanRpm) ? fanRpm > 0 : true);
     const hasV = (k) => this._has(k + '_supply') || this._has(k + '_return');
-    const vals = (k) => `${t.supply} <tspan class="sm" data-e="${k}_supply">${fmt(this._n(k + '_supply'), 1, ' °C')}</tspan>`;
-    const valr = (k) => `${t.ret} <tspan class="sm" data-e="${k}_return">${fmt(this._n(k + '_return'), 1, ' °C')}</tspan>`;
+    /* regels onder een circuit: label links, waarde rechts uitgelijnd in een vaste kolom */
+    const vals = (k) => [t.supply, fmt(this._n(k + '_supply'), 1, ' °C'), k + '_supply'];
+    const valr = (k) => [t.ret, fmt(this._n(k + '_return'), 1, ' °C'), k + '_return'];
     const vald = (k) => {
       const a = this._n(k + '_supply'), b = this._n(k + '_return');
-      return isNum(a) && isNum(b) ? `ΔT <tspan class="sm">${fmt(a - b, 1, ' °C')}</tspan>` : '';
+      return isNum(a) && isNum(b) ? ['ΔT', fmt(a - b, 1, ' °C'), ''] : null;
     };
-    const tag2 = (x, y, name, k) => `<text x="${x}" y="${y}" class="lbl">${name}</text>` + (hasV(k) ? `<text x="${x}" y="${y + 15}" class="lbl">${vals(k)}</text><text x="${x}" y="${y + 29}" class="lbl">${valr(k)}</text>` + (vald(k) ? `<text x="${x}" y="${y + 43}" class="lbl">${vald(k)}</text>` : '') : '');
+    const valk = (k) => this._has('room_' + k) ? [t.room, fmt(this._n('room_' + k), 1, ' °C'), 'room_' + k] : null;
+    const tag2 = (x, y, name, k) => {
+      const lines = [];
+      if (hasV(k)) { lines.push(vals(k), valr(k)); const d = vald(k); if (d) lines.push(d); }
+      const r = valk(k); if (r) lines.push(r);
+      return `<text x="${x}" y="${y}" class="lbl">${name}</text>` + lines.map((l, i) =>
+        `<text x="${x}" y="${y + 15 + i * 14}" class="lbl">${l[0]}</text><text x="${x + 112}" y="${y + 15 + i * 14}" text-anchor="end" class="lbl sm"${l[2] ? ` data-e="${l[2]}"` : ''}>${l[1]}</text>`).join('');
+    };
     /* lus van een verdeler: vier banen, de verdeler staat rechts */
     const loopPath = (y0, xv = 584, xL = xv - 72) => `M${xv} ${y0} H${xL} C${xL - 12} ${y0} ${xL - 12} ${y0 + 14} ${xL} ${y0 + 14} H${xv - 28} C${xv - 12} ${y0 + 14} ${xv - 12} ${y0 + 28} ${xv - 28} ${y0 + 28} H${xL} C${xL - 12} ${y0 + 28} ${xL - 12} ${y0 + 42} ${xL} ${y0 + 42} H${xv}`;
     const loopBox = (x, y, lines) => `<rect x="${x}" y="${y}" width="36" height="76" rx="6" style="fill:var(--card-background-color)" stroke="#c3c8ce" stroke-width="2.5"/>${lines.map((l) => `<line x1="${x + 6}" y1="${l}" x2="${x + 30}" y2="${l}" stroke="rgba(150,150,150,.6)"/>`).join('')}`;
@@ -344,7 +352,7 @@ class PanasonicMonoblockCard extends WPBase {
       <text x="22" y="16" class="zone">${t.outside}</text>
       <g transform="translate(60 0)">
         <rect x="262" y="0" width="26" height="${H}" fill="url(#${u}h)" stroke="rgba(150,150,150,.5)"/>
-        <rect x="296" y="226" width="${showG ? 480 : 344}" height="6" fill="rgba(150,150,150,.3)"/>
+        <rect x="296" y="238" width="${showG ? 480 : 344}" height="6" fill="rgba(150,150,150,.3)"/>
       </g>
       ${topSvg}
 
@@ -458,7 +466,7 @@ class PanasonicMonoblockCard extends WPBase {
         ${tag2(gx - 84, 392, t.garage, 'garage')}` : ''}
 
       <text x="338" y="18" class="zone">${t.first}</text>
-      <text x="338" y="248" class="zone">${t.ground}</text>
+      <text x="338" y="260" class="zone">${t.ground}</text>
 
       ${showF && this._has('floor_pump') ? this._pump(602, 270, floorOn) : ''}
       ${showR && this._has('radiator_pump') ? this._pump(312, 150, radOn) : ''}
@@ -509,6 +517,7 @@ class PanasonicMonoblockCard extends WPBase {
     const dTiles = view === 'details' ? [
       this._stat(t.supply, fmt(sup, 1, ' °C'), 'supply'), this._stat(t.ret, fmt(ret, 1, ' °C'), 'return'),
       this._stat('ΔT', fmt(dTv, 1, ' °C'), this._has('delta') ? 'delta' : ''),
+      ...[['rad', t.radBed], ['bath', t.bath], ['rad_ground', t.radGround], ['floor', t.floor], ['garage', t.garage]].filter((r) => this._has('room_' + r[0])).map((r) => this._stat(`${r[1]} · ${t.room}`, fmt(this._n('room_' + r[0]), 1, ' °C'), 'room_' + r[0])),
       ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
     ].join('') : '';
     /* knoppen: aan/uit (switch) en verwarmen/koelen (select) */
