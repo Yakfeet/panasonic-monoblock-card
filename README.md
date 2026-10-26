@@ -197,3 +197,5 @@ Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `e
 ## Licentie
 
 MIT
+
+![Validate](https://github.com/Yakfeet/panasonic-monoblock-card/actions/workflows/validate.yml/badge.svg)
