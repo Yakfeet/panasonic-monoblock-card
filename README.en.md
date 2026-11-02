@@ -24,9 +24,14 @@ Do you also have an Atlantic Explorer heat pump water heater? There is a separat
 ### Via HACS (recommended)
 
 1. Open **HACS** in Home Assistant.
-2. Click ⋮ in the top right → **Custom repositories**.
-3. Paste the URL of this repository, choose type **Dashboard** and click **Add**.
-4. Search for **Panasonic Monoblock Card**, click **Download** and reload the browser (Ctrl+F5).
+2. Search for **Panasonic Monoblock Card**.
+3. Click **Download** and reload the browser (Ctrl+F5).
+
+If the card is not in the list (yet), add it as a custom repository first:
+
+1. In HACS, click ⋮ in the top right → **Custom repositories**.
+2. Paste the URL of this repository, choose type **Dashboard** and click **Add**.
+3. Then search for **Panasonic Monoblock Card** and click **Download**.
 
 ### Manual
 

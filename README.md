@@ -24,9 +24,14 @@ Heb je ook een Atlantic Explorer warmtepompboiler? Daar is een aparte kaart voor
 ### Via HACS (aanbevolen)
 
 1. Open **HACS** in Home Assistant.
-2. Klik rechtsboven op ⋮ → **Aangepaste repositories**.
-3. Plak de URL van deze repository, kies type **Dashboard** en klik **Toevoegen**.
-4. Zoek **Panasonic Monoblock Card**, klik **Downloaden** en herlaad de browser (Ctrl+F5).
+2. Zoek op **Panasonic Monoblock Card**.
+3. Klik op **Downloaden** en herlaad de browser (Ctrl+F5).
+
+Staat de kaart (nog) niet in de lijst, voeg hem dan eerst toe als aangepaste repository:
+
+1. Klik in HACS rechtsboven op ⋮ → **Aangepaste repositories**.
+2. Plak de URL van deze repository, kies type **Dashboard** en klik **Toevoegen**.
+3. Zoek daarna **Panasonic Monoblock Card** en klik op **Downloaden**.
 
 ### Handmatig
 
@@ -197,5 +202,3 @@ Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `e
 ## Licentie
 
 MIT
-
-![Validate](https://github.com/Yakfeet/panasonic-monoblock-card/actions/workflows/validate.yml/badge.svg)
