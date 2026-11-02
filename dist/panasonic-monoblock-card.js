@@ -9,6 +9,9 @@
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const isNum = (v) => v !== null && v !== undefined && !isNaN(v);
+/* HTML-escaping: alles wat niet door de kaart zelf is gemaakt (entiteitsstatussen, labels, titel, afbeelding) gaat hier doorheen voordat het in innerHTML komt */
+const esc = (v) => String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const escDeep = (o) => (typeof o === 'string' ? esc(o) : Array.isArray(o) ? o.map(escDeep) : o && typeof o === 'object' ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, escDeep(v)])) : o);
 let NUM_LOCALE = 'nl-NL'; /* wordt bij elke render gezet op de taal van Home Assistant (of `language`) */
 const fmt = (v, d = 1, u = '') =>
   isNum(v) ? Number(v).toLocaleString(NUM_LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d }) + u : '–';
@@ -50,7 +53,7 @@ const TR = {
     modes: { heat: 'Heating', heating: 'Heating', cool: 'Cooling', cooling: 'Cooling', off: 'Off', auto: 'Auto', manual: 'Manual', eco: 'Eco+', 'eco+': 'Eco+', program: 'Program', programmed: 'Program', performance: 'Boost', electric: 'Electric', standard: 'Standard' },
   },
 };
-const modeText = (v, t) => (v === null || v === undefined || v === '' ? '' : t.modes[String(v).toLowerCase()] || String(v));
+const modeText = (v, t) => (v === null || v === undefined || v === '' ? '' : t.modes[String(v).toLowerCase()] || esc(v));
 const GREY = '#8b9097';
 
 /* Past de bestaande DOM aan op de nieuwe, in plaats van alles te vervangen: de elementen (en dus de animaties en de scrollpositie van het dashboard) blijven staan. */
@@ -229,7 +232,7 @@ class PanasonicMonoblockCard extends WPBase {
     const lang = String(c.language || (this._hass.locale && this._hass.locale.language) || this._hass.language || 'en').toLowerCase().slice(0, 2);
     const base = TR[lang] || TR.en;
     const lab = c.labels && typeof c.labels === 'object' ? c.labels : {}; /* eigen teksten: `labels:` overschrijft elke sleutel uit de TR-tabel */
-    const t = { ...base, ...lab, modes: { ...base.modes, ...(lab.modes && typeof lab.modes === 'object' ? lab.modes : {}) } };
+    const t = escDeep({ ...base, ...lab, modes: { ...base.modes, ...(lab.modes && typeof lab.modes === 'object' ? lab.modes : {}) } });
     NUM_LOCALE = c.language ? (lang === 'nl' ? 'nl-NL' : 'en-GB') : (this._hass.locale && this._hass.locale.language) || this._hass.language || (lang === 'nl' ? 'nl-NL' : 'en-GB');
     let tLo = parseFloat(c.temp_min), tHi = parseFloat(c.temp_max); /* kleurschaal van de leidingen */
     if (isNaN(tLo)) tLo = 20; if (isNaN(tHi) || tHi <= tLo) tHi = tLo + 1;
@@ -499,7 +502,7 @@ class PanasonicMonoblockCard extends WPBase {
       this._stat(copEstimated ? t.copEst : t.copCur, fmt(cop, 1), 'cop'),
       this._has('energy_today') ? this._stat(t.today, fmt(this._n('energy_today'), 2, ' kWh'), 'energy_today') : '',
       modeLabel ? this._stat(t.mode, modeLabel, 'mode') : '',
-      wm ? this._stat(t.workMode, wm.state, 'work_mode') : '',
+      wm ? this._stat(t.workMode, esc(wm.state), 'work_mode') : '',
       isNum(thermo) ? this._stat(t.room, fmt(thermo, 1, ' °C'), 'thermostat') : '',
     ].join('');
 
@@ -531,8 +534,8 @@ class PanasonicMonoblockCard extends WPBase {
       if (this._has('power_switch')) btns.push(`<button class="btn pw ${this._on('power_switch') ? 'on' : ''}" data-act="power" data-k="power_switch">${ICON.power}${this._on('power_switch') ? t.on : t.off}</button>`);
       if (this._has('operating_mode')) {
         const cur = this._st('operating_mode').state;
-        btns.push(`<button class="btn heat ${eq(cur, c.mode_heat) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_heat}">${ICON.heat}${t.heating}</button>`);
-        btns.push(`<button class="btn cool ${eq(cur, c.mode_cool) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${c.mode_cool}">${ICON.cool}${t.cooling}</button>`);
+        btns.push(`<button class="btn heat ${eq(cur, c.mode_heat) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${esc(c.mode_heat)}">${ICON.heat}${t.heating}</button>`);
+        btns.push(`<button class="btn cool ${eq(cur, c.mode_cool) ? 'on' : ''}" data-act="mode" data-k="operating_mode" data-opt="${esc(c.mode_cool)}">${ICON.cool}${t.cooling}</button>`);
       }
       if (btns.length) ctrl = `<div class="ctrl">${btns.join('')}</div>`;
     }
@@ -540,7 +543,7 @@ class PanasonicMonoblockCard extends WPBase {
     const body = view === 'drawing' ? A.svg
       : view === 'details' ? info
       : `<div class="wrap ${layout}"><div class="draw">${A.svg}</div><div class="info">${info}</div></div>`;
-    this._shell(c.title || t.title, pill, body);
+    this._shell(c.title ? esc(c.title) : t.title, pill, body);
   }
 }
 
