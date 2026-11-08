@@ -37,7 +37,7 @@ const TR = {
   nl: {
     title: 'Warmtepomp', supply: 'Aanvoer', ret: 'Retour', outside: 'BUITEN', first: 'VERDIEPING', ground: 'BEGANE GROND', defrostBadge: 'ONTDOOIEN',
     ambient: 'Buitenlucht', coil: 'Verdamper', exhaust: 'Persgas', suction: 'Zuiggas', compressor: 'Compressor', fan: 'Ventilator', condensing: 'Condensatie', expValve: 'Exp.ventiel', flow: 'Debiet', target: 'Doel aanvoer',
-    radBed: 'Radiatoren slaapkamers', bath: 'Badkamer vloer', radGround: 'Radiator begane grond', floor: 'Vloerverwarming', garage: 'Garage vloer',
+    radBed: 'Radiatoren slaapkamers', radUpper: 'Radiator verdieping', bath: 'Badkamer vloer', radGround: 'Radiator begane grond', floor: 'Vloerverwarming', garage: 'Garage vloer',
     chipCirc: 'Circulatie WP', chipRadPump: 'Cv-pomp', chipFloorPump: 'Vloerpomp', defrost: 'Ontdooien', softstart: 'Softstart', online: 'Online', fault: 'Storing',
     electric: 'Elektrisch', heatOut: 'Warmte-afgifte', copEst: 'COP (geschat)', copCur: 'COP (actueel)', today: 'Vandaag', mode: 'Modus', workMode: 'Werkstand', room: 'Kamer',
     standby: 'Stand-by', heating: 'Verwarmen', cooling: 'Koelen', on: 'Aan', off: 'Uit',
@@ -46,7 +46,7 @@ const TR = {
   en: {
     title: 'Heat pump', supply: 'Supply', ret: 'Return', outside: 'OUTSIDE', first: 'FIRST FLOOR', ground: 'GROUND FLOOR', defrostBadge: 'DEFROSTING',
     ambient: 'Outdoor air', coil: 'Evaporator', exhaust: 'Discharge gas', suction: 'Suction gas', compressor: 'Compressor', fan: 'Fan', condensing: 'Condensing', expValve: 'Exp. valve', flow: 'Flow', target: 'Target supply',
-    radBed: 'Bedroom radiators', bath: 'Bathroom floor', radGround: 'Ground floor radiator', floor: 'Underfloor heating', garage: 'Garage floor',
+    radBed: 'Bedroom radiators', radUpper: 'First floor radiator', bath: 'Bathroom floor', radGround: 'Ground floor radiator', floor: 'Underfloor heating', garage: 'Garage floor',
     chipCirc: 'HP circulation', chipRadPump: 'Heating pump', chipFloorPump: 'Floor pump', defrost: 'Defrost', softstart: 'Soft start', online: 'Online', fault: 'Fault',
     electric: 'Electrical', heatOut: 'Heat output', copEst: 'COP (estimated)', copCur: 'COP (current)', today: 'Today', mode: 'Mode', workMode: 'Work mode', room: 'Room',
     standby: 'Standby', heating: 'Heating', cooling: 'Cooling', on: 'On', off: 'Off',
@@ -223,7 +223,7 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: '', language: '', labels: {}, show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
+  static defaults() { return { title: '', first_order: ['rad', 'bath', 'rad2'], ground_order: ['rad_ground', 'floor', 'garage'], language: '', labels: {}, show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_radiators_upper: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
@@ -282,13 +282,21 @@ class PanasonicMonoblockCard extends WPBase {
     const build = (u) => {
     const showR = c.show_radiators !== false, showF = c.show_floor !== false;
     const autoShow = (opt, k) => (opt === true || opt === 'true') || (opt !== false && opt !== 'false' && (this._has(k + '_supply') || this._has(k + '_return')));
-    const showB = autoShow(c.show_bathroom, 'bath'), showG = autoShow(c.show_garage, 'garage'), showRg = autoShow(c.show_radiators_ground, 'rad_ground');
+    const showB = autoShow(c.show_bathroom, 'bath'), showG = autoShow(c.show_garage, 'garage'), showRg = autoShow(c.show_radiators_ground, 'rad_ground'), showU = autoShow(c.show_radiators_upper, 'rad2');
+    const hasUp = showR || showB || showU; /* circuits op de verdieping */
+    /* volgorde (links, midden, rechts) per verdieping; elk blok staat in een vaste plek van 120 breed */
+    const SLOT = [336, 500, 656];
+    const orderOf = (opt, def) => { const out = []; for (const k of (Array.isArray(opt) ? opt.map(String) : []).concat(def)) if (def.includes(k) && !out.includes(k)) out.push(k); return out; };
+    const ordU = orderOf(c.first_order, ['rad', 'bath', 'rad2']), ordG = orderOf(c.ground_order, ['rad_ground', 'floor', 'garage']);
+    const dxOf = (ord, k, base) => SLOT[ord.indexOf(k)] - base;
+    const dxR = dxOf(ordU, 'rad', 336), dxB = dxOf(ordU, 'bath', 500), dxU = dxOf(ordU, 'rad2', 656);
+    const dxRg = dxOf(ordG, 'rad_ground', 336), dxF = dxOf(ordG, 'floor', 500), dxG = dxOf(ordG, 'garage', 656);
     const hasG = showF || showRg || showG; /* circuits op de begane grond */
     const gx = 740, gm = gx + 18; /* de verdeler van de garage staat rechts naast de vloerverwarming */
     const yB = hasG ? 372 : 340; /* onderste retourleiding */
     const radOn = showR && circ && (this._has('radiator_pump') ? this._on('radiator_pump') : true);
     const floorOn = showF && circ && (this._has('floor_pump') ? this._on('floor_pump') : true);
-    const bathOn = showB && circ, garOn = showG && circ, radGOn = showRg && circ;
+    const bathOn = showB && circ, radUOn = showU && circ, garOn = showG && circ, radGOn = showRg && circ;
 
 
     // gegevens in het buitenpaneel
@@ -310,7 +318,7 @@ class PanasonicMonoblockCard extends WPBase {
     const cols = [22, 116, 210];
     const GY = 96;
     const H = Math.max(yB + 24, 466);
-    const W = showG ? 860 : 700;
+    const W = (showU && ordU[2] === 'rad2') || (showR && ordU[2] === 'rad') || (showB && ordU[2] === 'bath') || (showG && ordG[2] === 'garage') || (showRg && ordG[2] === 'rad_ground') || (showF && ordG[2] === 'floor') ? 860 : 700;
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
     const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
     const nearSvg = `<rect x="14" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="409" class="lbl">${t.supply}</text><text x="22" y="426" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
@@ -324,25 +332,28 @@ class PanasonicMonoblockCard extends WPBase {
       const S = isNum(this._n(k + '_supply')) ? this._n(k + '_supply') : sup, R = isNum(this._n(k + '_return')) ? this._n(k + '_return') : ret;
       return { s: tempColor(S, tLo, tHi), r: tempColor(R, tLo, tHi), a: tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, tLo, tHi) };
     };
-    const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground');
-    const xR = 350, xB = 602; /* xB: midden van de verdeler van de badkamer */
+    const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground'), cU = bc('rad2');
+    const xR = 350 + dxR, xB = 602 + dxB, xU = 716 + dxU; /* x van de aanvoer/retour per circuit op de verdieping */
+    const xRg = 350 + dxRg, xF = 602 + dxF, xGm = 758 + dxG; /* idem op de begane grond */
+    const upX = [showR ? xR : null, showB ? xB : null, showU ? xU : null].filter((v) => v !== null);
+    const gX = [showRg ? xRg : null, showF ? xF : null, showG ? xGm : null].filter((v) => v !== null);
+    const upMin = Math.min(...upX), upMax = Math.max(...upX), gMax = Math.max(...gX);
     const supTrunk = 'M262 270 H312';
-    const supUp = showR || showB ? `M312 270 V44 H${showB ? xB : xR}` : '';
-    const supRad = showR ? `M${xR} 44 V70` : '', supBath = showB ? `M${xB} 44 V70` : '';
-    const gEnd = showF ? 602 : showRg ? 350 : 312;
-    const supGBus = showF || showRg ? `M312 270 H${gEnd}` : '';
-    const supFloor = showF ? 'M602 270 V282' : '', supRg = showRg ? 'M350 270 V286' : '';
-    const supGarBus = showG ? `M${gEnd} 270 H${gm}` : '', supGar = showG ? `M${gm} 270 V282` : '';
-    const retRadDrop = showR ? `M${xR} 124 V152` : '', retBathDrop = showB ? `M${xB} 146 V152` : '';
-    const retFloorDrop = showF ? 'M602 358 V372' : '', retRgDrop = showRg ? 'M350 340 V372' : '';
-    const retGBus = ''; /* de retouren van de begane grond lopen via retMain */
+    const supUp = hasUp ? `M312 270 V44 H${upMax}` : '';
+    const supRad = showR ? `M${xR} 44 V70` : '', supBath = showB ? `M${xB} 44 V70` : '', supU = showU ? `M${xU} 44 V70` : '';
+    const supGBus = hasG ? `M312 270 H${gMax}` : '';
+    const supFloor = showF ? `M${xF} 270 V282` : '', supRg = showRg ? `M${xRg} 270 V286` : '';
+    const supGar = showG ? `M${xGm} 270 V282` : '';
+    const retRadDrop = showR ? `M${xR} 124 V152` : '', retBathDrop = showB ? `M${xB} 146 V152` : '', retUDrop = showU ? `M${xU} 124 V152` : '';
+    const retUJoin = hasUp && upMax > 632 && upMin <= 632 ? `M${upMax} 152 H632` : '';
+    const retFloorDrop = showF ? `M${xF} 358 V372${xF > 632 ? ' H632' : ''}` : '', retRgDrop = showRg ? `M${xRg} 340 V372${xRg > 632 ? ' H632' : ''}` : '';
     const retMain = hasG
-      ? `${showR || showB ? `M${showR ? xR : xB} 152 H632 V372` : `M${showG ? 632 : showF ? 602 : 350} 372`} H296 V296 H262`
-      : `M${showR ? xR : showB ? xB : 632} ${showR || showB ? 152 : yB} H632 V${yB} H296 V296 H262`;
+      ? `${hasUp ? `M${upMin} 152 H632 V372` : `M${Math.min(632, gMax)} 372`} H296 V296 H262`
+      : `M${hasUp ? upMin : 632} ${hasUp ? 152 : yB} H632 V${yB} H296 V296 H262`;
     const bathCoil = loopPath(84), floorOut = loopPath(296), garOut = loopPath(296, gx, gx - 72);
-    const garRet = `M${gm} 358 V372 H632`;
-    const finsOf = (y, col, on) => Array.from({ length: 7 }, (_, i) => `<rect x="${344 + i * 15.5}" y="${y}" width="10" height="42" rx="3" fill="${on ? col : GREY}" fill-opacity="${on ? 1 : 0.5}"/>`).join('');
-    const fins = finsOf(76, cR.a, radOn), finsG = finsOf(292, cRg.a, radGOn);
+    const garRet = `M${xGm} 358 V372${xGm > 632 ? ' H632' : ''}`;
+    const finsOf = (y, col, on, x0 = 344) => Array.from({ length: 7 }, (_, i) => `<rect x="${x0 + i * 15.5}" y="${y}" width="10" height="42" rx="3" fill="${on ? col : GREY}" fill-opacity="${on ? 1 : 0.5}"/>`).join('');
+    const fins = finsOf(76, cR.a, radOn), finsG = finsOf(292, cRg.a, radGOn), finsU = finsOf(76, cU.a, radUOn, 664);
     const haze = (x, y, d) => `<path class="haze" style="animation-delay:${d}s" d="M${x} ${y} q4 -4.5 0 -9 t0 -9" fill="none" stroke="${cF.a}" stroke-width="2" stroke-linecap="round"/>`;
 
     const svg = `
@@ -426,12 +437,11 @@ class PanasonicMonoblockCard extends WPBase {
       <!-- hoofdleidingen: aanvoer en retour -->
       ${this._pipe(retMain, retC, circ, 6, fd)}
       ${this._pipe(supTrunk, supC, circ, 6, fd)}
-      ${supUp ? this._pipe(supUp, supC, radOn || bathOn, 6, fd) : ''}
-      ${supGBus ? this._pipe(supGBus, supC, floorOn || radGOn, 6, fd) : ''}
-      ${supGarBus ? this._pipe(supGarBus, supC, garOn, 6, fd) : ''}
-      ${retGBus ? this._pipe(retGBus, retC, floorOn || radGOn, 6, fd) : ''}
+      ${supUp ? this._pipe(supUp, supC, radOn || bathOn || radUOn, 6, fd) : ''}
+      ${supGBus ? this._pipe(supGBus, supC, floorOn || radGOn || garOn, 6, fd) : ''}
       ${supRad ? this._pipe(supRad, cR.s, radOn, 6, fd) : ''}
       ${supBath ? this._pipe(supBath, cB.s, bathOn, 6, fd) : ''}
+      ${supU ? this._pipe(supU, cU.s, radUOn, 6, fd) : ''}
       ${supFloor ? this._pipe(supFloor, cF.s, floorOn, 6, fd) : ''}
       ${supRg ? this._pipe(supRg, cRg.s, radGOn, 6, fd) : ''}
       ${supGar ? this._pipe(supGar, cG.s, garOn, 6, fd) : ''}
@@ -439,39 +449,45 @@ class PanasonicMonoblockCard extends WPBase {
       <!-- verdieping: radiatoren slaapkamers + badkamervloer -->
       ${showR ? `
         ${this._pipe(retRadDrop, cR.r, radOn, 6, fd)}
-        <rect x="336" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${fins}
-        ${tag2(336, 172, t.radBed, 'rad')}` : ''}
+        <g transform="translate(${dxR} 0)"><rect x="336" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${fins}
+        ${tag2(336, 172, t.radBed, 'rad')}</g>` : ''}
       ${showB ? `
-        ${this._pipe(bathCoil, cB.a, bathOn, 6, fd)}
         ${this._pipe(retBathDrop, cB.r, bathOn, 6, fd)}
+        <g transform="translate(${dxB} 0)">${this._pipe(bathCoil, cB.a, bathOn, 6, fd)}
         ${bathOn ? hz(512, 84, cB.a) : ''}
         ${loopBox(584, 70, [84, 98, 112, 126])}
-        ${tag2(500, 172, t.bath, 'bath')}` : ''}
+        ${tag2(500, 172, t.bath, 'bath')}</g>` : ''}
+
+      ${showU ? `
+        ${retUJoin ? this._pipe(retUJoin, cU.r, radUOn, 6, fd) : ''}
+        ${this._pipe(retUDrop, cU.r, radUOn, 6, fd)}
+        <g transform="translate(${dxU} 0)"><rect x="656" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsU}
+        ${tag2(656, 172, t.radUpper, 'rad2')}</g>` : ''}
 
       <!-- begane grond: radiator en vloerverwarming -->
       ${showRg ? `
         ${this._pipe(retRgDrop, cRg.r, radGOn, 6, fd)}
-        <rect x="336" y="286" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsG}
-        ${tag2(336, 392, t.radGround, 'rad_ground')}` : ''}
+        <g transform="translate(${dxRg} 0)"><rect x="336" y="286" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsG}
+        ${tag2(336, 392, t.radGround, 'rad_ground')}</g>` : ''}
       ${showF ? `
-        ${this._pipe(floorOut, cF.a, floorOn, 6, fd)}
         ${this._pipe(retFloorDrop, cF.r, floorOn, 6, fd)}
+        <g transform="translate(${dxF} 0)">${this._pipe(floorOut, cF.a, floorOn, 6, fd)}
         ${loopBox(584, 282, [296, 310, 324, 338])}
         ${floorOn ? haze(520, 292, 0.3) + haze(545, 292, 0.9) + haze(570, 292, 1.5) : ''}
-        ${tag2(500, 392, t.floor, 'floor')}` : ''}
+        ${tag2(500, 392, t.floor, 'floor')}</g>` : ''}
 
       <!-- garage -->
       ${showG ? `
-        ${this._pipe(garOut, cG.a, garOn, 6, fd)}
         ${this._pipe(garRet, cG.r, garOn, 6, fd)}
+        <g transform="translate(${dxG} 0)">${this._pipe(garOut, cG.a, garOn, 6, fd)}
         ${garOn ? hz(gx - 72, 296, cG.a) : ''}
         ${loopBox(gx, 282, [296, 310, 324, 338])}
-        ${tag2(gx - 84, 392, t.garage, 'garage')}` : ''}
+        ${tag2(gx - 84, 392, t.garage, 'garage')}</g>` : ''}
 
       <text x="338" y="18" class="zone">${t.first}</text>
       <text x="338" y="260" class="zone">${t.ground}</text>
 
-      ${showF && this._has('floor_pump') ? this._pump(602, 270, floorOn) : ''}
+      ${showF && this._has('floor_pump') ? this._pump(xF, 270, floorOn) : ''}
       ${showR && this._has('radiator_pump') ? this._pump(312, 150, radOn) : ''}
       </g>
     </svg>`;
@@ -520,7 +536,7 @@ class PanasonicMonoblockCard extends WPBase {
     const dTiles = view === 'details' ? [
       this._stat(t.supply, fmt(sup, 1, ' °C'), 'supply'), this._stat(t.ret, fmt(ret, 1, ' °C'), 'return'),
       this._stat('ΔT', fmt(dTv, 1, ' °C'), this._has('delta') ? 'delta' : ''),
-      ...[['rad', t.radBed], ['bath', t.bath], ['rad_ground', t.radGround], ['floor', t.floor], ['garage', t.garage]].filter((r) => this._has('room_' + r[0])).map((r) => this._stat(`${r[1]} · ${t.room}`, fmt(this._n('room_' + r[0]), 1, ' °C'), 'room_' + r[0])),
+      ...[['rad', t.radBed], ['rad2', t.radUpper], ['bath', t.bath], ['rad_ground', t.radGround], ['floor', t.floor], ['garage', t.garage]].filter((r) => this._has('room_' + r[0])).map((r) => this._stat(`${r[1]} · ${t.room}`, fmt(this._n('room_' + r[0]), 1, ' °C'), 'room_' + r[0])),
       ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
     ].join('') : '';
     /* knoppen: aan/uit (switch) en verwarmen/koelen (select) */
