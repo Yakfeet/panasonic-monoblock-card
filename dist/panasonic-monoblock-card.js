@@ -36,7 +36,7 @@ const OK_STATES = ['0', 'off', 'none', 'no fault', 'unknown', 'unavailable', '',
 const TR = {
   nl: {
     title: 'Warmtepomp', supply: 'Aanvoer', ret: 'Retour', outside: 'BUITEN', first: 'VERDIEPING', ground: 'BEGANE GROND', defrostBadge: 'ONTDOOIEN',
-    ambient: 'Buitenlucht', coil: 'Verdamper', exhaust: 'Persgas', suction: 'Zuiggas', compressor: 'Compressor', fan: 'Ventilator', condensing: 'Condensatie', expValve: 'Exp.ventiel', flow: 'Debiet', target: 'Doel aanvoer',
+    ambient: 'Buitenlucht', coil: 'Verdamper', exhaust: 'Persgas', suction: 'Zuiggas', compressor: 'Compressor', fan: 'Ventilator', condensing: 'Condensatie', expValve: 'Exp.ventiel', flow: 'Debiet', target: 'Doel aanvoer', rtc: 'RTC-correctie',
     radBed: 'Radiatoren slaapkamers', radUpper: 'Radiator verdieping', bath: 'Badkamer vloer', radGround: 'Radiator begane grond', floor: 'Vloerverwarming', garage: 'Garage vloer',
     chipCirc: 'Circulatie WP', chipRadPump: 'Cv-pomp', chipFloorPump: 'Vloerpomp', defrost: 'Ontdooien', softstart: 'Softstart', online: 'Online', fault: 'Storing',
     electric: 'Elektrisch', heatOut: 'Warmte-afgifte', copEst: 'COP (geschat)', copCur: 'COP (actueel)', today: 'Vandaag', mode: 'Modus', workMode: 'Werkstand', room: 'Kamer',
@@ -45,7 +45,7 @@ const TR = {
   },
   en: {
     title: 'Heat pump', supply: 'Supply', ret: 'Return', outside: 'OUTSIDE', first: 'FIRST FLOOR', ground: 'GROUND FLOOR', defrostBadge: 'DEFROSTING',
-    ambient: 'Outdoor air', coil: 'Evaporator', exhaust: 'Discharge gas', suction: 'Suction gas', compressor: 'Compressor', fan: 'Fan', condensing: 'Condensing', expValve: 'Exp. valve', flow: 'Flow', target: 'Target supply',
+    ambient: 'Outdoor air', coil: 'Evaporator', exhaust: 'Discharge gas', suction: 'Suction gas', compressor: 'Compressor', fan: 'Fan', condensing: 'Condensing', expValve: 'Exp. valve', flow: 'Flow', target: 'Target supply', rtc: 'RTC correction',
     radBed: 'Bedroom radiators', radUpper: 'First floor radiator', bath: 'Bathroom floor', radGround: 'Ground floor radiator', floor: 'Underfloor heating', garage: 'Garage floor',
     chipCirc: 'HP circulation', chipRadPump: 'Heating pump', chipFloorPump: 'Floor pump', defrost: 'Defrost', softstart: 'Soft start', online: 'Online', fault: 'Fault',
     electric: 'Electrical', heatOut: 'Heat output', copEst: 'COP (estimated)', copCur: 'COP (current)', today: 'Today', mode: 'Mode', workMode: 'Work mode', room: 'Room',
@@ -223,7 +223,7 @@ class WPBase extends HTMLElement {
 /*  Panasonic monoblock, zonder buffervat                              */
 /* ================================================================== */
 class PanasonicMonoblockCard extends WPBase {
-  static defaults() { return { title: '', first_order: ['rad', 'bath', 'rad2'], ground_order: ['rad_ground', 'floor', 'garage'], language: '', labels: {}, show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_radiators_upper: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
+  static defaults() { return { title: '', first_order: ['rad', 'bath', 'rad_upper'], ground_order: ['rad_ground', 'floor', 'garage'], language: '', labels: {}, show_radiators: true, show_floor: true, show_bathroom: 'auto', show_garage: 'auto', show_radiators_ground: 'auto', show_radiators_upper: 'auto', show_controls: true, mode_heat: 'Heat only', mode_cool: 'Cool only', temp_min: 20, temp_max: 55, reverse_flow: false, view: 'full', layout: 'auto' }; }
   static getStubConfig() { return { type: 'custom:panasonic-monoblock-card', entities: { supply: 'sensor.aanvoer', return: 'sensor.retour' } }; }
 
   _render() {
@@ -282,14 +282,14 @@ class PanasonicMonoblockCard extends WPBase {
     const build = (u) => {
     const showR = c.show_radiators !== false, showF = c.show_floor !== false;
     const autoShow = (opt, k) => (opt === true || opt === 'true') || (opt !== false && opt !== 'false' && (this._has(k + '_supply') || this._has(k + '_return')));
-    const showB = autoShow(c.show_bathroom, 'bath'), showG = autoShow(c.show_garage, 'garage'), showRg = autoShow(c.show_radiators_ground, 'rad_ground'), showU = autoShow(c.show_radiators_upper, 'rad2');
+    const showB = autoShow(c.show_bathroom, 'bath'), showG = autoShow(c.show_garage, 'garage'), showRg = autoShow(c.show_radiators_ground, 'rad_ground'), showU = autoShow(c.show_radiators_upper, 'rad_upper');
     const hasUp = showR || showB || showU; /* circuits op de verdieping */
     /* volgorde (links, midden, rechts) per verdieping; elk blok staat in een vaste plek van 120 breed */
     const SLOT = [336, 500, 656];
     const orderOf = (opt, def) => { const out = []; for (const k of (Array.isArray(opt) ? opt.map(String) : []).concat(def)) if (def.includes(k) && !out.includes(k)) out.push(k); return out; };
-    const ordU = orderOf(c.first_order, ['rad', 'bath', 'rad2']), ordG = orderOf(c.ground_order, ['rad_ground', 'floor', 'garage']);
+    const ordU = orderOf(c.first_order, ['rad', 'bath', 'rad_upper']), ordG = orderOf(c.ground_order, ['rad_ground', 'floor', 'garage']);
     const dxOf = (ord, k, base) => SLOT[ord.indexOf(k)] - base;
-    const dxR = dxOf(ordU, 'rad', 336), dxB = dxOf(ordU, 'bath', 500), dxU = dxOf(ordU, 'rad2', 656);
+    const dxR = dxOf(ordU, 'rad', 336), dxB = dxOf(ordU, 'bath', 500), dxU = dxOf(ordU, 'rad_upper', 656);
     const dxRg = dxOf(ordG, 'rad_ground', 336), dxF = dxOf(ordG, 'floor', 500), dxG = dxOf(ordG, 'garage', 656);
     const hasG = showF || showRg || showG; /* circuits op de begane grond */
     const gx = 740, gm = gx + 18; /* de verdeler van de garage staat rechts naast de vloerverwarming */
@@ -306,6 +306,9 @@ class PanasonicMonoblockCard extends WPBase {
       ['exhaust', t.exhaust, fmt(this._n('exhaust'), 0, ' °C')],
     ].filter((i) => this._has(i[0]));
     const fanTxt = isNum(fanRpm) ? fmt(fanRpm, 0, ' rpm') : isNum(fanHz) ? fmt(fanHz, 0, ' Hz') : null;
+    /* correctiewaarde: met teken, eenheid van de sensor zelf (K wordt °C) */
+    const rtcV = this._n('rtc_correction'), rtcU = (((this._hass.states[c.entities.rtc_correction] || {}).attributes || {}).unit_of_measurement || '').replace(/^K$/, '°C');
+    const rtcTxt = isNum(rtcV) ? (rtcV > 0 ? '+' : '') + fmt(rtcV, 1, rtcU ? ' ' + rtcU : '') : '–';
     const gridItems = [
       ['suction', t.suction, fmt(this._n('suction'), 0, ' °C')],
       ['comp_hz', t.compressor, fmt(compHz, 0, ' Hz')],
@@ -314,11 +317,12 @@ class PanasonicMonoblockCard extends WPBase {
       ['eev', t.expValve, fmt(this._n('eev'), 0, ' P')],
       ['flow', t.flow, fmt(flow, 1, ' L/min')],
       ['setpoint', t.target, fmt(this._n('setpoint'), 1, ' °C')],
+      ['rtc_correction', t.rtc, rtcTxt],
     ].filter((i) => i && this._has(i[0]));
     const cols = [22, 116, 210];
     const GY = 96;
     const H = Math.max(yB + 24, 466);
-    const W = (showU && ordU[2] === 'rad2') || (showR && ordU[2] === 'rad') || (showB && ordU[2] === 'bath') || (showG && ordG[2] === 'garage') || (showRg && ordG[2] === 'rad_ground') || (showF && ordG[2] === 'floor') ? 860 : 700;
+    const W = (showU && ordU[2] === 'rad_upper') || (showR && ordU[2] === 'rad') || (showB && ordU[2] === 'bath') || (showG && ordG[2] === 'garage') || (showRg && ordG[2] === 'rad_ground') || (showF && ordG[2] === 'floor') ? 860 : 700;
     const topSvg = topItems.map((it, i) => `<text x="${cols[i]}" y="38" class="lbl">${it[1]}</text><text x="${cols[i]}" y="55" class="val" data-e="${it[0]}">${it[2]}</text>`).join('');
     const dTv = isNum(sup) && isNum(ret) ? sup - ret : (this._has('delta') ? this._n('delta') : null);
     const nearSvg = `<rect x="14" y="396" width="3" height="31" rx="1.5" fill="${circ ? tempColor(sup, tLo, tHi) : GREY}"/><text x="22" y="409" class="lbl">${t.supply}</text><text x="22" y="426" class="val" data-e="supply">${fmt(sup, 1, ' °C')}</text>
@@ -332,7 +336,7 @@ class PanasonicMonoblockCard extends WPBase {
       const S = isNum(this._n(k + '_supply')) ? this._n(k + '_supply') : sup, R = isNum(this._n(k + '_return')) ? this._n(k + '_return') : ret;
       return { s: tempColor(S, tLo, tHi), r: tempColor(R, tLo, tHi), a: tempColor(isNum(S) && isNum(R) ? S * 0.7 + R * 0.3 : null, tLo, tHi) };
     };
-    const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground'), cU = bc('rad2');
+    const cR = bc('rad'), cB = bc('bath'), cF = bc('floor'), cG = bc('garage'), cRg = bc('rad_ground'), cU = bc('rad_upper');
     const xR = 350 + dxR, xB = 602 + dxB, xU = 716 + dxU; /* x van de aanvoer/retour per circuit op de verdieping */
     const xRg = 350 + dxRg, xF = 602 + dxF, xGm = 758 + dxG; /* idem op de begane grond */
     const upX = [showR ? xR : null, showB ? xB : null, showU ? xU : null].filter((v) => v !== null);
@@ -462,7 +466,7 @@ class PanasonicMonoblockCard extends WPBase {
         ${retUJoin ? this._pipe(retUJoin, cU.r, radUOn, 6, fd) : ''}
         ${this._pipe(retUDrop, cU.r, radUOn, 6, fd)}
         <g transform="translate(${dxU} 0)"><rect x="656" y="70" width="120" height="54" rx="7" fill="none" stroke="${GREY}" stroke-width="2"/>${finsU}
-        ${tag2(656, 172, t.radUpper, 'rad2')}</g>` : ''}
+        ${tag2(656, 172, t.radUpper, 'rad_upper')}</g>` : ''}
 
       <!-- begane grond: radiator en vloerverwarming -->
       ${showRg ? `
@@ -536,7 +540,7 @@ class PanasonicMonoblockCard extends WPBase {
     const dTiles = view === 'details' ? [
       this._stat(t.supply, fmt(sup, 1, ' °C'), 'supply'), this._stat(t.ret, fmt(ret, 1, ' °C'), 'return'),
       this._stat('ΔT', fmt(dTv, 1, ' °C'), this._has('delta') ? 'delta' : ''),
-      ...[['rad', t.radBed], ['rad2', t.radUpper], ['bath', t.bath], ['rad_ground', t.radGround], ['floor', t.floor], ['garage', t.garage]].filter((r) => this._has('room_' + r[0])).map((r) => this._stat(`${r[1]} · ${t.room}`, fmt(this._n('room_' + r[0]), 1, ' °C'), 'room_' + r[0])),
+      ...[['rad', t.radBed], ['rad_upper', t.radUpper], ['bath', t.bath], ['rad_ground', t.radGround], ['floor', t.floor], ['garage', t.garage]].filter((r) => this._has('room_' + r[0])).map((r) => this._stat(`${r[1]} · ${t.room}`, fmt(this._n('room_' + r[0]), 1, ' °C'), 'room_' + r[0])),
       ...topItems.map((it) => this._stat(it[1], it[2], it[0])), ...gridItems.map((it) => this._stat(it[1], it[2], it[0])),
     ].join('') : '';
     /* knoppen: aan/uit (switch) en verwarmen/koelen (select) */
