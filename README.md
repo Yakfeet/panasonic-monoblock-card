@@ -83,7 +83,7 @@ entities:
 | Optie | Omschrijving | Standaard |
 | --- | --- | --- |
 | `title` | Titel van de kaart | op taal (`Warmtepomp` / `Heat pump`) |
-| `labels` | Eigen teksten voor de kaart en de knoppen, zie Taal | – |
+| `labels` | Eigen teksten, zoals de namen van de circuits (`radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`) en de knoppen. Zie [Eigen teksten](#eigen-teksten) | – |
 | `language` | Taal van de kaart: `nl` of `en`. Standaard de taal van Home Assistant | automatisch |
 | `show_radiators` | Radiatorcircuit tonen | `true` |
 | `show_floor` | Vloerverwarming begane grond tonen | `true` |
@@ -190,6 +190,7 @@ Met `labels` pas je elke tekst op de kaart aan, bijvoorbeeld de namen van de cir
 type: custom:panasonic-monoblock-card
 labels:
   radBed: Slaapkamers
+  radUpper: Radiator werkkamer
   bath: Badkamer
   heating: Warm
   cooling: Koel
@@ -199,7 +200,7 @@ labels:
     heat: Verwarmen
 ```
 
-Beschikbare sleutels: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. De namen van de modi pas je aan onder `modes`.
+Beschikbare sleutels: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. De namen van de modi pas je aan onder `modes`.
 
 Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `en`-blok in de `TR`-tabel bovenin, geef het de taalcode (bijvoorbeeld `de`) en vertaal de teksten. Pull requests zijn welkom.
 

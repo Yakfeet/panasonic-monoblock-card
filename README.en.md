@@ -83,7 +83,7 @@ entities:
 | Option | Description | Default |
 | --- | --- | --- |
 | `title` | Card title | by language (`Warmtepomp` / `Heat pump`) |
-| `labels` | Your own texts for the card and the buttons, see Language | – |
+| `labels` | Your own texts, such as the circuit names (`radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`) and the buttons. See [Custom texts](#custom-texts) | – |
 | `language` | Card language: `nl` or `en`. Defaults to the Home Assistant language | automatic |
 | `show_radiators` | Show the radiator circuit | `true` |
 | `show_floor` | Show underfloor heating, ground floor | `true` |
@@ -190,6 +190,7 @@ With `labels` you change any text on the card, for example the circuit names or 
 type: custom:panasonic-monoblock-card
 labels:
   radBed: Bedrooms
+  radUpper: Office radiator
   bath: Bathroom
   heating: Warm
   cooling: Cool
@@ -199,7 +200,7 @@ labels:
     heat: Heating
 ```
 
-Available keys: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. Change the mode names under `modes`.
+Available keys: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. Change the mode names under `modes`.
 
 You can add a language in `dist/panasonic-monoblock-card.js`: copy the `en` block in the `TR` table at the top, give it the language code (for example `de`) and translate the texts. Pull requests are welcome.
 
