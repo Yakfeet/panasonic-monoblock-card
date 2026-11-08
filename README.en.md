@@ -89,6 +89,9 @@ entities:
 | `show_floor` | Show underfloor heating, ground floor | `true` |
 | `show_bathroom` | Show the bathroom floor (first floor). `auto` shows it as soon as you fill in `bath_supply` or `bath_return` | `auto` |
 | `show_radiators_ground` | Show the radiator on the ground floor. `auto` shows it as soon as you fill in `rad_ground_supply` or `rad_ground_return` | `auto` |
+| `show_radiators_upper` | Show the second radiator on the first floor. `auto` shows it as soon as you fill in `rad2_supply` or `rad2_return` | `auto` |
+| `first_order` | Order of the circuits on the first floor, left to right. Possible values: `rad` (bedrooms), `bath` (bathroom), `rad2` (second radiator). Example: `[bath, rad, rad2]` | `[rad, bath, rad2]` |
+| `ground_order` | Order of the circuits on the ground floor, left to right. Possible values: `rad_ground` (radiator), `floor` (underfloor heating), `garage`. Example: `[floor, rad_ground, garage]` | `[rad_ground, floor, garage]` |
 | `show_garage` | Show the garage underfloor heating. `auto` shows it as soon as you fill in `garage_supply` or `garage_return` | `auto` |
 | `temp_min` / `temp_max` | Temperature range of the pipe colour scale: blue at or below `temp_min`, red at or above `temp_max`. For underfloor heating try `20` and `40` | `20` / `55` |
 | `show_controls` | Show the on/off and heat/cool buttons (only when you fill in `power_switch` / `operating_mode`) | `true` |
@@ -119,9 +122,10 @@ entities:
 | `thermostat` | `climate` entity, shows the room temperature |
 | `rad_supply` / `rad_return` | Supply and return of the radiators (bedrooms, first floor) |
 | `rad_ground_supply` / `rad_ground_return` | Supply and return of the radiator on the ground floor |
+| `rad2_supply` / `rad2_return` | Supply and return of the second radiator on the first floor (right of the bathroom) |
 | `bath_supply` / `bath_return` | Supply and return of the bathroom underfloor heating (first floor) |
 | `floor_supply` / `floor_return` | Supply and return of the ground floor underfloor heating manifold |
-| `room_rad` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Room temperature (°C) for that circuit: bedrooms, bathroom, ground floor radiator, ground floor underfloor heating and garage. Optional, shown as the last line under the circuit |
+| `room_rad` / `room_rad2` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Room temperature (°C) for that circuit: bedrooms, bathroom, ground floor radiator, ground floor underfloor heating and garage. Optional, shown as the last line under the circuit |
 | `garage_supply` / `garage_return` | Supply and return of the garage underfloor heating manifold |
 | `floor_pump` / `radiator_pump` | Pump switch. If it is off, that circuit turns grey |
 | `power_switch` | Switch (`switch`, `input_boolean`) to turn the heat pump on and off. Shows an On/Off button |

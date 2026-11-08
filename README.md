@@ -89,6 +89,9 @@ entities:
 | `show_floor` | Vloerverwarming begane grond tonen | `true` |
 | `show_bathroom` | Badkamervloer (verdieping) tonen. `auto` toont hem zodra je `bath_supply` of `bath_return` invult | `auto` |
 | `show_radiators_ground` | Radiator op de begane grond tonen. `auto` toont hem zodra je `rad_ground_supply` of `rad_ground_return` invult | `auto` |
+| `show_radiators_upper` | Tweede radiator op de verdieping tonen. `auto` toont hem zodra je `rad2_supply` of `rad2_return` invult | `auto` |
+| `first_order` | Volgorde van de circuits op de verdieping, van links naar rechts. Mogelijke waarden: `rad` (slaapkamers), `bath` (badkamer), `rad2` (tweede radiator). Voorbeeld: `[bath, rad, rad2]` | `[rad, bath, rad2]` |
+| `ground_order` | Volgorde van de circuits op de begane grond, van links naar rechts. Mogelijke waarden: `rad_ground` (radiator), `floor` (vloerverwarming), `garage`. Voorbeeld: `[floor, rad_ground, garage]` | `[rad_ground, floor, garage]` |
 | `show_garage` | Vloerverwarming garage tonen. `auto` toont hem zodra je `garage_supply` of `garage_return` invult | `auto` |
 | `temp_min` / `temp_max` | Temperatuurbereik van de kleurschaal van de leidingen: onder `temp_min` blauw, boven `temp_max` rood. Voor vloerverwarming bijvoorbeeld `20` en `40` | `20` / `55` |
 | `show_controls` | Aan/uit- en verwarmen/koelen-knoppen tonen (alleen als je `power_switch` / `operating_mode` invult) | `true` |
@@ -119,9 +122,10 @@ entities:
 | `thermostat` | `climate`-entiteit, toont de kamertemperatuur |
 | `rad_supply` / `rad_return` | Aanvoer en retour van de radiatoren (slaapkamers, verdieping) |
 | `rad_ground_supply` / `rad_ground_return` | Aanvoer en retour van de radiator op de begane grond |
+| `rad2_supply` / `rad2_return` | Aanvoer en retour van de tweede radiator op de verdieping (rechts naast de badkamer) |
 | `bath_supply` / `bath_return` | Aanvoer en retour van de vloerverwarming in de badkamer (verdieping) |
 | `floor_supply` / `floor_return` | Aanvoer en retour van de verdeler van de vloerverwarming op de begane grond |
-| `room_rad` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Ruimtetemperatuur (°C) bij het betreffende circuit: slaapkamers, badkamer, woonkamer (radiator), woonkamer (vloer) en garage. Optioneel, wordt als laatste regel onder het circuit getoond |
+| `room_rad` / `room_rad2` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Ruimtetemperatuur (°C) bij het betreffende circuit: slaapkamers, badkamer, woonkamer (radiator), woonkamer (vloer) en garage. Optioneel, wordt als laatste regel onder het circuit getoond |
 | `garage_supply` / `garage_return` | Aanvoer en retour van de vloerverwarmingsverdeler in de garage |
 | `floor_pump` / `radiator_pump` | Schakelaar van de pomp. Staat die uit, dan wordt het circuit grijs |
 | `power_switch` | Schakelaar (`switch`, `input_boolean`) om de warmtepomp aan en uit te zetten. Toont een Aan/Uit-knop |
