@@ -89,8 +89,8 @@ entities:
 | `show_floor` | Vloerverwarming begane grond tonen | `true` |
 | `show_bathroom` | Badkamervloer (verdieping) tonen. `auto` toont hem zodra je `bath_supply` of `bath_return` invult | `auto` |
 | `show_radiators_ground` | Radiator op de begane grond tonen. `auto` toont hem zodra je `rad_ground_supply` of `rad_ground_return` invult | `auto` |
-| `show_radiators_upper` | Tweede radiator op de verdieping tonen. `auto` toont hem zodra je `rad2_supply` of `rad2_return` invult | `auto` |
-| `first_order` | Volgorde van de circuits op de verdieping, van links naar rechts. Mogelijke waarden: `rad` (slaapkamers), `bath` (badkamer), `rad2` (tweede radiator). Voorbeeld: `[bath, rad, rad2]` | `[rad, bath, rad2]` |
+| `show_radiators_upper` | Tweede radiator op de verdieping tonen. `auto` toont hem zodra je `rad_upper_supply` of `rad_upper_return` invult | `auto` |
+| `first_order` | Volgorde van de circuits op de verdieping, van links naar rechts. Mogelijke waarden: `rad` (slaapkamers), `bath` (badkamer), `rad_upper` (tweede radiator). Voorbeeld: `[bath, rad, rad_upper]` | `[rad, bath, rad_upper]` |
 | `ground_order` | Volgorde van de circuits op de begane grond, van links naar rechts. Mogelijke waarden: `rad_ground` (radiator), `floor` (vloerverwarming), `garage`. Voorbeeld: `[floor, rad_ground, garage]` | `[rad_ground, floor, garage]` |
 | `show_garage` | Vloerverwarming garage tonen. `auto` toont hem zodra je `garage_supply` of `garage_return` invult | `auto` |
 | `temp_min` / `temp_max` | Temperatuurbereik van de kleurschaal van de leidingen: onder `temp_min` blauw, boven `temp_max` rood. Voor vloerverwarming bijvoorbeeld `20` en `40` | `20` / `55` |
@@ -122,10 +122,11 @@ entities:
 | `thermostat` | `climate`-entiteit, toont de kamertemperatuur |
 | `rad_supply` / `rad_return` | Aanvoer en retour van de radiatoren (slaapkamers, verdieping) |
 | `rad_ground_supply` / `rad_ground_return` | Aanvoer en retour van de radiator op de begane grond |
-| `rad2_supply` / `rad2_return` | Aanvoer en retour van de tweede radiator op de verdieping (rechts naast de badkamer) |
+| `rad_upper_supply` / `rad_upper_return` | Aanvoer en retour van de tweede radiator op de verdieping (rechts naast de badkamer) |
 | `bath_supply` / `bath_return` | Aanvoer en retour van de vloerverwarming in de badkamer (verdieping) |
 | `floor_supply` / `floor_return` | Aanvoer en retour van de verdeler van de vloerverwarming op de begane grond |
-| `room_rad` / `room_rad2` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Ruimtetemperatuur (°C) bij het betreffende circuit: slaapkamers, badkamer, woonkamer (radiator), woonkamer (vloer) en garage. Optioneel, wordt als laatste regel onder het circuit getoond |
+| `room_rad` / `room_rad_upper` / `room_bath` / `room_rad_ground` / `room_floor` / `room_garage` | Ruimtetemperatuur (°C) bij het betreffende circuit: slaapkamers, badkamer, woonkamer (radiator), woonkamer (vloer) en garage. Optioneel, wordt als laatste regel onder het circuit getoond |
+| `rtc_correction` | RTC-correctie (bijvoorbeeld `sensor.wp_rtc_correctie`), wordt als waarde in het buitenpaneel getoond met teken en de eenheid van de sensor |
 | `garage_supply` / `garage_return` | Aanvoer en retour van de vloerverwarmingsverdeler in de garage |
 | `floor_pump` / `radiator_pump` | Schakelaar van de pomp. Staat die uit, dan wordt het circuit grijs |
 | `power_switch` | Schakelaar (`switch`, `input_boolean`) om de warmtepomp aan en uit te zetten. Toont een Aan/Uit-knop |
@@ -200,7 +201,23 @@ labels:
     heat: Verwarmen
 ```
 
-Beschikbare sleutels: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. De namen van de modi pas je aan onder `modes`.
+Beschikbare sleutels: `supply`, `ret`, `outside`, `first`, `ground`, `defrostBadge`, `ambient`, `coil`, `exhaust`, `suction`, `compressor`, `fan`, `condensing`, `expValve`, `flow`, `target`, `radBed`, `radUpper`, `bath`, `radGround`, `floor`, `garage`, `chipCirc`, `chipRadPump`, `chipFloorPump`, `defrost`, `softstart`, `online`, `fault`, `electric`, `heatOut`, `copEst`, `copCur`, `today`, `mode`, `workMode`, `rtc`, `room`, `standby`, `heating`, `cooling`, `on`, `off`. De namen van de modi pas je aan onder `modes`.
+
+#### Welke sleutel waarvoor?
+
+Voor elk circuit zijn er twee sleutels: één voor de sensoren en de volgorde, en één voor de tekst in `labels`.
+
+| Circuit | Sensoren, `show_…` en volgorde | Tekst in `labels` |
+|---|---|---|
+| Radiatoren slaapkamers | `rad_supply`, `rad_return`, `room_rad`, waarde `rad` | `radBed` |
+| Radiator verdieping (tweede) | `rad_upper_supply`, `rad_upper_return`, `room_rad_upper`, waarde `rad_upper` | `radUpper` |
+| Badkamer vloer | `bath_supply`, `bath_return`, `room_bath`, waarde `bath` | `bath` |
+| Radiator begane grond | `rad_ground_supply`, `rad_ground_return`, `room_rad_ground`, waarde `rad_ground` | `radGround` |
+| Vloerverwarming begane grond | `floor_supply`, `floor_return`, `room_floor`, waarde `floor` | `floor` |
+| Garage | `garage_supply`, `garage_return`, `room_garage`, waarde `garage` | `garage` |
+| RTC-correctie | `rtc_correction` | `rtc` |
+
+De waarden in de kolom "Sensoren…" gebruik je ook in `first_order` en `ground_order`.
 
 Je kunt een taal toevoegen in `dist/panasonic-monoblock-card.js`: kopieer het `en`-blok in de `TR`-tabel bovenin, geef het de taalcode (bijvoorbeeld `de`) en vertaal de teksten. Pull requests zijn welkom.
 
